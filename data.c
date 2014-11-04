@@ -13,8 +13,8 @@ void init() {
   ssize_t read;
   int i=0;
 
-  fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/all_terms.txt", "r");
-  if (fp == NULL) exit(-1);
+  fp = fopen("data/all_terms.txt", "r");
+  if (fp == NULL) { printf("Error!\n"); exit(-1); }
 
   printf("-> Reading collection from all_terms.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -26,8 +26,8 @@ void init() {
   fclose(fp);
 
 
-  fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/doc_length.txt", "r");
-  if (fp == NULL) exit(-1);
+  fp = fopen("data/doc_length.txt", "r");
+  if (fp == NULL) { printf("Error!\n"); exit(-1); }
 
   i=0;
   printf("-> Reading doclengths from doc_length.txt\n");
@@ -40,10 +40,8 @@ void init() {
   fclose(fp);
 
 
-  fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/doc_id.txt", "r");
-  if (fp == NULL) {
-    exit(-1);
-  }
+  fp = fopen("data/doc_id.txt", "r");
+  if (fp == NULL) { printf("Error!\n"); exit(-1); }
 
   i=0;
   printf("-> Reading tweetids from doc_id.txt\n");
@@ -55,14 +53,8 @@ void init() {
 
   fclose(fp);
 
-  if (line) {
-    free(line);
-  }
-
-  fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/df_table.txt", "r");
-  if (fp == NULL) {
-    exit(-1);
-  }
+  fp = fopen("data/df_table.txt", "r");
+  if (fp == NULL) { printf("Error!\n"); exit(-1); }
 
   i=0;
   printf("-> Reading dfs from df_table.txt\n");
@@ -74,4 +66,7 @@ void init() {
 
   fclose(fp);
 
+  if (line) {
+    free(line);
+  }
 }

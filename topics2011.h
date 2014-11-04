@@ -1,3 +1,4 @@
+// schema is topic num, number of query terms, then the query terms
 int *topics2011[] = {
   (int []) {1, 5, 4788240, 9384977, 8939066, 9037683, 5050683},
   (int []) {2, 3, 591367, 5320786, 9006122},
