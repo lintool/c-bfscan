@@ -4,10 +4,13 @@
 #include <time.h>
 #include <string.h>
 
+#include "heap.h"
 #include "topics2011.h"
 
 #define COLLECTION_SIZE 191160334
 #define NUM_DOCS 15175674
+
+#define TOP_K 1000
 
 static int collection[COLLECTION_SIZE];
 static short doclengths[NUM_DOCS];
@@ -70,26 +73,53 @@ int main(int argc, const char* argv[]) {
     int max_score = 0;
     int max_doc = -1;
 
+    heap h;
+    heap_create(&h,0,NULL);
+
+    int* min_key;
+    int* min_val;
+
     base = 0;
     for (i=0; i<NUM_DOCS; i++) {
       score = 0;
       for (j=0; j<doclengths[i]; j++) {
         for (t=2; t<2+topics2011[n][1]; t++) {
-          if ( collection[base+j] == topics2011[n][t]) {
+          if (collection[base+j] == topics2011[n][t]) {
             score++;
           }
         }
       }
 
-      if (score > max_score) {
-        max_score = score;
-        max_doc = i;
+      if (score > 0) {
+        int size = heap_size(&h);
+
+        if ( size < TOP_K ) {
+          int *docid = malloc(sizeof(int)); *docid = i;
+          int *scorez = malloc(sizeof(int)); *scorez = score;
+          heap_insert(&h, scorez, docid);
+        } else {
+          heap_min(&h, (void**)&min_key, (void**)&min_val);
+
+          if (score > *min_key) {
+            heap_delmin(&h, (void**)&min_key, (void**)&min_val);
+
+            int *docid = malloc(sizeof(int)); *docid = i;
+            int *scorez = malloc(sizeof(int)); *scorez = score;
+            heap_insert(&h, scorez, docid);
+          }
+	}
       }
 
       base += doclengths[i];
     }
 
-    printf("%d Q0 %d 1 %d bfscan1\n", topics2011[n][0], max_doc, max_score);
+    int rank = TOP_K;
+    while (heap_delmin(&h, (void**)&min_key, (void**)&min_val)) {
+      printf("%d Q0 %d %d %d compiled-index\n", (n+1), *min_val, rank, *min_key);
+      rank--;
+    }
+
+    heap_destroy(&h);
   }
 
   end = clock();
