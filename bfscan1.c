@@ -9,11 +9,15 @@
 
 #define COLLECTION_SIZE 191160334
 #define NUM_DOCS 15175674
+#define NUM_TERMS 14327804
 
+#define MU 2500
 #define TOP_K 1000
 
 static int collection[COLLECTION_SIZE];
+static long tweetids[NUM_DOCS];
 static short doclengths[NUM_DOCS];
+static short df[NUM_TERMS];
 
 int main(int argc, const char* argv[]) {
   FILE * fp;
@@ -23,34 +27,44 @@ int main(int argc, const char* argv[]) {
   int i=0, j=0;;
 
   fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/all_terms.txt", "r");
-  if (fp == NULL) {
-    exit(-1);
-  }
+  if (fp == NULL) exit(-1);
 
+  printf("-> Reading collection from all_terms.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
-    //printf("Retrieved line of length %zu :\n", read);
-    int termid = atoi(line);
-    if (i % 10000000 == 0 ) printf("Read %d terms...\n", i);
-    collection[i++] = termid;
+    collection[i++] = atoi(line);
+    if (i % 10000000 == 0 ) printf("  %d terms...\n", i);
   }
-  printf("Total of %d terms read\n", i);
+  printf("Total of %d terms read\n\n", i);
 
   fclose(fp);
 
 
   fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/doc_length.txt", "r");
+  if (fp == NULL) exit(-1);
+
+  i=0;
+  printf("-> Reading doclengths from doc_length.txt\n");
+  while ((read = getline(&line, &len, fp)) != -1) {
+    doclengths[i++] = atoi(line);
+    if (i % 1000000 == 0 ) printf("  %d lengths...\n", i);
+  }
+  printf("Total of %d doclengths read\n\n", i);
+
+  fclose(fp);
+
+
+  fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/doc_id.txt", "r");
   if (fp == NULL) {
     exit(-1);
   }
 
   i=0;
+  printf("-> Reading tweetids from doc_id.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
-    //printf("Retrieved line of length %zu :\n", read);
-    int doclength = atoi(line);
-    if (i % 1000000 == 0 ) printf("Read %d terms...\n", i);
-    doclengths[i++] = doclength;
+    tweetids[i++] = atol(line);
+    if (i % 1000000 == 0 ) printf("  %d tweetids...\n", i);
   }
-  printf("Total of %d doclengths read\n", i);
+  printf("Total of %d tweetids read\n\n", i);
 
   fclose(fp);
 
@@ -58,25 +72,40 @@ int main(int argc, const char* argv[]) {
     free(line);
   }
 
+  fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/df_table.txt", "r");
+  if (fp == NULL) {
+    exit(-1);
+  }
+
+  i=0;
+  printf("-> Reading dfs from df_table.txt\n");
+  while ((read = getline(&line, &len, fp)) != -1) {
+    df[i++] = atoi(line);
+    if (i % 1000000 == 0 ) printf("  %d terms...\n", i);
+  }
+  printf("Total of %d terms read\n\n", i);
+
+  fclose(fp);
+
+
   clock_t begin, end;
   double time_spent;
   begin = clock();
 
   int sum = 0;
   int base = 0;
-  int score;
+  double score;
 
   int n;
   int t;
 
   for (n=0; n<49; n++) {
-    int max_score = 0;
-    int max_doc = -1;
+    printf("Processing topic %d...\n", topics2011[n][0]);
 
     heap h;
     heap_create(&h,0,NULL);
 
-    int* min_key;
+    float* min_key;
     int* min_val;
 
     base = 0;
@@ -85,7 +114,7 @@ int main(int argc, const char* argv[]) {
       for (j=0; j<doclengths[i]; j++) {
         for (t=2; t<2+topics2011[n][1]; t++) {
           if (collection[base+j] == topics2011[n][t]) {
-            score++;
+              score += log10(NUM_DOCS / df[t]);
           }
         }
       }
@@ -95,7 +124,7 @@ int main(int argc, const char* argv[]) {
 
         if ( size < TOP_K ) {
           int *docid = malloc(sizeof(int)); *docid = i;
-          int *scorez = malloc(sizeof(int)); *scorez = score;
+          float *scorez = malloc(sizeof(float)); *scorez = score;
           heap_insert(&h, scorez, docid);
         } else {
           heap_min(&h, (void**)&min_key, (void**)&min_val);
@@ -104,7 +133,7 @@ int main(int argc, const char* argv[]) {
             heap_delmin(&h, (void**)&min_key, (void**)&min_val);
 
             int *docid = malloc(sizeof(int)); *docid = i;
-            int *scorez = malloc(sizeof(int)); *scorez = score;
+            float *scorez = malloc(sizeof(float)); *scorez = score;
             heap_insert(&h, scorez, docid);
           }
 	}
@@ -115,7 +144,7 @@ int main(int argc, const char* argv[]) {
 
     int rank = TOP_K;
     while (heap_delmin(&h, (void**)&min_key, (void**)&min_val)) {
-      printf("%d Q0 %d %d %d compiled-index\n", (n+1), *min_val, rank, *min_key);
+      printf("%d Q0 %ld %d %f bfscan1\n", (n+1), tweetids[*min_val], rank, *min_key);
       rank--;
     }
 
