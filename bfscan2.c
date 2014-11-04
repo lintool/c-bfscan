@@ -199,7 +199,7 @@ int main(int argc, const char* argv[]) {
       }
     }
 
-    printf("doc %d, score %d\n", max_doc, max_score);
+    printf("%d Q0 %d 1 %d bfscan1\n", topics2011[n][0], max_doc, max_score);
   }
 
   end = clock();

@@ -67,8 +67,6 @@ int main(int argc, const char* argv[]) {
   int t;
 
   for (n=0; n<49; n++) {
-    printf("topic id %d, %d terms\n", topics2011[n][0], topics2011[n][1]);
-
     int max_score = 0;
     int max_doc = -1;
 
@@ -91,7 +89,7 @@ int main(int argc, const char* argv[]) {
       base += doclengths[i];
     }
 
-    printf("doc %d, score %d\n", max_doc, max_score);
+    printf("%d Q0 %d 1 %d bfscan1\n", topics2011[n][0], max_doc, max_score);
   }
 
   end = clock();
