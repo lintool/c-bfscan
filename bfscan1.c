@@ -19,14 +19,6 @@ int main(int argc, const char* argv[]) {
   ssize_t read;
   int i=0, j=0;;
 
-  /*
-  for (i=0; i<49; i++) {
-    printf("topic id %d, %d terms\n", topics2011[i][0], topics2011[i][1]);
-    for (j=2; j<2+topics2011[i][1]; j++) {
-      printf("%d\n", topics2011[i][j]);
-    }
-    }*/
-  
   fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/all_terms.txt", "r");
   if (fp == NULL) {
     exit(-1);
@@ -77,6 +69,9 @@ int main(int argc, const char* argv[]) {
   for (n=0; n<49; n++) {
     printf("topic id %d, %d terms\n", topics2011[n][0], topics2011[n][1]);
 
+    int max_score = 0;
+    int max_doc = -1;
+
     base = 0;
     for (i=0; i<NUM_DOCS; i++) {
       score = 0;
@@ -88,10 +83,15 @@ int main(int argc, const char* argv[]) {
         }
       }
 
-      //if (score == topics2011[n][1])
-      //printf("doc %d, score %d\n", i, score);
+      if (score > max_score) {
+        max_score = score;
+        max_doc = i;
+      }
+
       base += doclengths[i];
     }
+
+    printf("doc %d, score %d\n", max_doc, max_score);
   }
 
   end = clock();
