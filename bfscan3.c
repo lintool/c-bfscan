@@ -4,73 +4,36 @@
 #include <time.h>
 #include <string.h>
 
+#include "heap.h"
 #include "topics2011_reordered.h"
+#include "constants.h"
 
-#define COLLECTION_SIZE 191160334
-#define NUM_DOCS 15175674
-
-static int collection[COLLECTION_SIZE];
-static short doclengths[NUM_DOCS];
+extern void init();
 
 int main(int argc, const char* argv[]) {
-  FILE * fp;
-  char * line = NULL;
-  size_t len = 0;
-  ssize_t read;
-  int i=0, j=0;;
+  init();
 
-  fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/all_terms.txt", "r");
-  if (fp == NULL) {
-    exit(-1);
-  }
-
-  while ((read = getline(&line, &len, fp)) != -1) {
-    //printf("Retrieved line of length %zu :\n", read);
-    int termid = atoi(line);
-    if (i % 10000000 == 0 ) printf("Read %d terms...\n", i);
-    collection[i++] = termid;
-  }
-  printf("Total of %d terms read\n", i);
-
-  fclose(fp);
-
-
-  fp = fopen("/Users/jimmylin/Dropbox/data/bfscan-statistics/doc_length.txt", "r");
-  if (fp == NULL) {
-    exit(-1);
-  }
-
-  i=0;
-  while ((read = getline(&line, &len, fp)) != -1) {
-    //printf("Retrieved line of length %zu :\n", read);
-    int doclength = atoi(line);
-    if (i % 1000000 == 0 ) printf("Read %d terms...\n", i);
-    doclengths[i++] = doclength;
-  }
-  printf("Total of %d doclengths read\n", i);
-
-  fclose(fp);
-
-  if (line) {
-    free(line);
-  }
+  int i=0, j=0;
 
   clock_t begin, end;
   double time_spent;
   begin = clock();
 
-  int sum = 0;
   int base = 0;
-  int score1, score2;
+  float score1, score2;
 
   int n;
-  int t;
 
   for (n=0; n<42; n+=2) {
-    int max_score1 = 0, max_score2 = 0;
-    int max_doc1 = -1, max_doc2 = -1;
-
     base = 0;
+
+    heap h1;
+    heap_create(&h1,0,NULL);
+    heap h2;
+    heap_create(&h2,0,NULL);
+
+    float* min_key;
+    int* min_val;
 
     if ( topics2011[n][1] == 2 ) {
       for (i=0; i<NUM_DOCS; i++) {
@@ -78,21 +41,51 @@ int main(int argc, const char* argv[]) {
         score2 = 0;
 
         for (j=0; j<doclengths[i]; j++) {
-           collection[base+j] == topics2011[n][2] && score1++;
-           collection[base+j] == topics2011[n][3] && score1++;
+	  if (collection[base+j] == topics2011[n][2]) score1+=log10(NUM_DOCS / df[2]);
+	  if (collection[base+j] == topics2011[n][3]) score1+=log10(NUM_DOCS / df[3]);
 
-           collection[base+j] == topics2011[n+1][2] && score2++;
-           collection[base+j] == topics2011[n+1][3] && score2++;
+	  if (collection[base+j] == topics2011[n+1][2]) score2+=log10(NUM_DOCS / df[2]);
+	  if (collection[base+j] == topics2011[n+1][3]) score2+=log10(NUM_DOCS / df[3]);
         }
 
-        if (score1 > max_score1) {
-          max_score1 = score1;
-          max_doc1 = i;
+        if (score1 > 0) {
+          int size = heap_size(&h1);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score1;
+            heap_insert(&h1, scorez, docid);
+          } else {
+            heap_min(&h1, (void**)&min_key, (void**)&min_val);
+
+            if (score1 > *min_key) {
+              heap_delmin(&h1, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score1;
+              heap_insert(&h1, scorez, docid);
+            }
+          }
         }
 
-        if (score2 > max_score2) {
-          max_score2 = score2;
-          max_doc2 = i;
+        if (score2 > 0) {
+          int size = heap_size(&h2);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score2;
+            heap_insert(&h2, scorez, docid);
+          } else {
+            heap_min(&h2, (void**)&min_key, (void**)&min_val);
+
+            if (score2 > *min_key) {
+              heap_delmin(&h2, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score2;
+              heap_insert(&h2, scorez, docid);
+            }
+          }
         }
 
         base += doclengths[i];
@@ -104,23 +97,53 @@ int main(int argc, const char* argv[]) {
         score2 = 0;
 
         for (j=0; j<doclengths[i]; j++) {
-           collection[base+j] == topics2011[n][2] && score1++;
-           collection[base+j] == topics2011[n][3] && score1++;
-           collection[base+j] == topics2011[n][4] && score1++;
+          if (collection[base+j] == topics2011[n][2]) score1+=log10(NUM_DOCS / df[2]);
+	  if (collection[base+j] == topics2011[n][3]) score1+=log10(NUM_DOCS / df[3]);
+	  if (collection[base+j] == topics2011[n][4]) score1+=log10(NUM_DOCS / df[4]);
 
-           collection[base+j] == topics2011[n+1][2] && score2++;
-           collection[base+j] == topics2011[n+1][3] && score2++;
-           collection[base+j] == topics2011[n+1][4] && score2++;
+	  if (collection[base+j] == topics2011[n+1][2]) score2+=log10(NUM_DOCS / df[2]);
+	  if (collection[base+j] == topics2011[n+1][3]) score2+=log10(NUM_DOCS / df[3]);
+	  if (collection[base+j] == topics2011[n+1][4]) score2+=log10(NUM_DOCS / df[4]);
         }
 
-        if (score1 > max_score1) {
-          max_score1 = score1;
-          max_doc1 = i;
+        if (score1 > 0) {
+          int size = heap_size(&h1);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score1;
+            heap_insert(&h1, scorez, docid);
+          } else {
+            heap_min(&h1, (void**)&min_key, (void**)&min_val);
+
+            if (score1 > *min_key) {
+              heap_delmin(&h1, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score1;
+              heap_insert(&h1, scorez, docid);
+            }
+    	  }
         }
 
-        if (score2 > max_score2) {
-          max_score2 = score2;
-          max_doc2 = i;
+        if (score2 > 0) {
+          int size = heap_size(&h2);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score2;
+            heap_insert(&h2, scorez, docid);
+          } else {
+            heap_min(&h2, (void**)&min_key, (void**)&min_val);
+
+            if (score2 > *min_key) {
+              heap_delmin(&h2, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score2;
+              heap_insert(&h2, scorez, docid);
+            }
+    	  }
         }
 
         base += doclengths[i];
@@ -132,25 +155,55 @@ int main(int argc, const char* argv[]) {
         score2 = 0;
 
         for (j=0; j<doclengths[i]; j++) {
-           collection[base+j] == topics2011[n][2] && score1++;
-           collection[base+j] == topics2011[n][3] && score1++;
-           collection[base+j] == topics2011[n][4] && score1++;
-           collection[base+j] == topics2011[n][5] && score1++;
+	  if (collection[base+j] == topics2011[n][2]) score1+=log10(NUM_DOCS / df[2]);
+	  if (collection[base+j] == topics2011[n][3]) score1+=log10(NUM_DOCS / df[3]);
+	  if (collection[base+j] == topics2011[n][4]) score1+=log10(NUM_DOCS / df[4]);
+	  if (collection[base+j] == topics2011[n][5]) score1+=log10(NUM_DOCS / df[5]);
 
-           collection[base+j] == topics2011[n+1][2] && score2++;
-           collection[base+j] == topics2011[n+1][3] && score2++;
-           collection[base+j] == topics2011[n+1][4] && score2++;
-           collection[base+j] == topics2011[n+1][5] && score2++;
+	  if (collection[base+j] == topics2011[n+1][2]) score2+=log10(NUM_DOCS / df[2]);
+	  if (collection[base+j] == topics2011[n+1][3]) score2+=log10(NUM_DOCS / df[3]);
+	  if (collection[base+j] == topics2011[n+1][4]) score2+=log10(NUM_DOCS / df[4]);
+	  if (collection[base+j] == topics2011[n+1][5]) score2+=log10(NUM_DOCS / df[5]);
         }
 
-        if (score1 > max_score1) {
-          max_score1 = score1;
-          max_doc1 = i;
+        if (score1 > 0) {
+          int size = heap_size(&h1);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score1;
+            heap_insert(&h1, scorez, docid);
+          } else {
+            heap_min(&h1, (void**)&min_key, (void**)&min_val);
+
+            if (score1 > *min_key) {
+              heap_delmin(&h1, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score1;
+              heap_insert(&h1, scorez, docid);
+            }
+    	  }
         }
 
-        if (score2 > max_score2) {
-          max_score2 = score2;
-          max_doc2 = i;
+        if (score2 > 0) {
+          int size = heap_size(&h2);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score2;
+            heap_insert(&h2, scorez, docid);
+          } else {
+            heap_min(&h2, (void**)&min_key, (void**)&min_val);
+
+            if (score2 > *min_key) {
+              heap_delmin(&h2, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score2;
+              heap_insert(&h2, scorez, docid);
+            }
+    	  }
         }
 
         base += doclengths[i];
@@ -162,39 +215,81 @@ int main(int argc, const char* argv[]) {
         score2 = 0;
 
         for (j=0; j<doclengths[i]; j++) {
-           collection[base+j] == topics2011[n][2] && score1++;
-           collection[base+j] == topics2011[n][3] && score1++;
-           collection[base+j] == topics2011[n][4] && score1++;
-           collection[base+j] == topics2011[n][5] && score1++;
-           collection[base+j] == topics2011[n][6] && score1++;
+	  if (collection[base+j] == topics2011[n][2]) score1+=log10(NUM_DOCS / df[2]);
+	  if (collection[base+j] == topics2011[n][3]) score1+=log10(NUM_DOCS / df[3]);
+	  if (collection[base+j] == topics2011[n][4]) score1+=log10(NUM_DOCS / df[4]);
+	  if (collection[base+j] == topics2011[n][5]) score1+=log10(NUM_DOCS / df[5]);
+	  if (collection[base+j] == topics2011[n][6]) score1+=log10(NUM_DOCS / df[6]);
 
-           collection[base+j] == topics2011[n+1][2] && score2++;
-           collection[base+j] == topics2011[n+1][3] && score2++;
-           collection[base+j] == topics2011[n+1][4] && score2++;
-           collection[base+j] == topics2011[n+1][5] && score2++;
-           collection[base+j] == topics2011[n+1][6] && score2++;
+	  if (collection[base+j] == topics2011[n+1][2]) score2+=log10(NUM_DOCS / df[2]);
+	  if (collection[base+j] == topics2011[n+1][3]) score2+=log10(NUM_DOCS / df[3]);
+	  if (collection[base+j] == topics2011[n+1][4]) score2+=log10(NUM_DOCS / df[4]);
+	  if (collection[base+j] == topics2011[n+1][5]) score2+=log10(NUM_DOCS / df[5]);
+	  if (collection[base+j] == topics2011[n+1][6]) score2+=log10(NUM_DOCS / df[6]);
         }
 
-        if (score1 > max_score1) {
-          max_score1 = score1;
-          max_doc1 = i;
+        if (score1 > 0) {
+          int size = heap_size(&h1);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score1;
+            heap_insert(&h1, scorez, docid);
+          } else {
+            heap_min(&h1, (void**)&min_key, (void**)&min_val);
+
+            if (score1 > *min_key) {
+              heap_delmin(&h1, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score1;
+              heap_insert(&h1, scorez, docid);
+            }
+    	  }
         }
 
-        if (score2 > max_score2) {
-          max_score2 = score2;
-          max_doc2 = i;
+        if (score2 > 0) {
+          int size = heap_size(&h2);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score2;
+            heap_insert(&h2, scorez, docid);
+          } else {
+            heap_min(&h2, (void**)&min_key, (void**)&min_val);
+
+            if (score2 > *min_key) {
+              heap_delmin(&h2, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score2;
+              heap_insert(&h2, scorez, docid);
+            }
+    	  }
         }
 
         base += doclengths[i];
       }
     }
 
-    printf("%d Q0 %d 1 %d bfscan1\n", topics2011[n][0], max_doc1, max_score1);
-    printf("%d Q0 %d 1 %d bfscan1\n", topics2011[n+1][0], max_doc2, max_score2);
+    int rank = TOP_K;
+    while (heap_delmin(&h1, (void**)&min_key, (void**)&min_val)) {
+      printf("%d Q0 %ld %d %f bfscan3\n", topics2011[n][0], tweetids[*min_val], rank, *min_key);
+      rank--;
+    }
+    heap_destroy(&h1);
+
+    rank = TOP_K;
+    while (heap_delmin(&h2, (void**)&min_key, (void**)&min_val)) {
+      printf("%d Q0 %ld %d %f bfscan3\n", topics2011[n+1][0], tweetids[*min_val], rank, *min_key);
+      rank--;
+    }
+    heap_destroy(&h2);
   }
 
   end = clock();
   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
   printf("Total time = %f ms\n", time_spent * 1000);
-  printf("Time per query = %f ms\n", (time_spent * 1000)/42);
+  printf("Time per query = %f ms\n", (time_spent * 1000)/21);
+  printf("Throughput: %f qps\n", 42/time_spent);
 }

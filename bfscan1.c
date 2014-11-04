@@ -81,4 +81,5 @@ int main(int argc, const char* argv[]) {
   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
   printf("Total time = %f ms\n", time_spent * 1000);
   printf("Time per query = %f ms\n", (time_spent * 1000)/49);
+  printf("Throughput: %f qps\n", 49/time_spent);
 }
