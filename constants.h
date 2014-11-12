@@ -15,3 +15,4 @@ short df[NUM_TERMS];
 int cf[NUM_TERMS];
 
 double (*array_fun[DOC_LENGTH])(int* collection, short* tf, int *base, int *querytermid, double *prob, double *plus);
+double (*array_fun_direct[NUM_DOCS])(int* collection, short* tf, int *base, int *querytermid, double *prob, double *plus);

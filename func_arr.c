@@ -1488,3 +1488,111 @@ double (*array_fun[DOC_LENGTH])(int* collection, short* tf, int *base, int *quer
     length22, length23, length24, length25, length26, length27, length28, length29, length30, length31, 
     length32, length33, length34, length35, length36, length37, length38, length39, length40, length41, 
     length42, length43, length44, length45, length46, length47, length48, length49};
+
+void mapping() {
+  int i;
+  printf("-> Start mapping\n");
+  for (i = 0; i < NUM_DOCS; i ++) {
+    if (doclengths[i] == 1) {
+      array_fun_direct[i] = length1;
+    } else if (doclengths[i] == 2) {
+      array_fun_direct[i] = length2;
+    } else if (doclengths[i] == 3) {
+      array_fun_direct[i] = length3;
+    } else if (doclengths[i] == 4) {
+      array_fun_direct[i] = length4;
+    } else if (doclengths[i] == 5) {
+      array_fun_direct[i] = length5;
+    } else if (doclengths[i] == 6) {
+      array_fun_direct[i] = length6;
+    } else if (doclengths[i] == 7) {
+      array_fun_direct[i] = length7;
+    } else if (doclengths[i] == 8) {
+      array_fun_direct[i] = length8;
+    } else if (doclengths[i] == 9) {
+      array_fun_direct[i] = length9;
+    } else if (doclengths[i] == 10) {
+      array_fun_direct[i] = length10;
+    } else if (doclengths[i] == 11) {
+      array_fun_direct[i] = length11;
+    } else if (doclengths[i] == 12) {
+      array_fun_direct[i] = length12;
+    } else if (doclengths[i] == 13) {
+      array_fun_direct[i] = length13;
+    } else if (doclengths[i] == 14) {
+      array_fun_direct[i] = length14;
+    } else if (doclengths[i] == 15) {
+      array_fun_direct[i] = length15;
+    } else if (doclengths[i] == 16) {
+      array_fun_direct[i] = length16;
+    } else if (doclengths[i] == 17) {
+      array_fun_direct[i] = length17;
+    } else if (doclengths[i] == 18) {
+      array_fun_direct[i] = length18;
+    } else if (doclengths[i] == 19) {
+      array_fun_direct[i] = length19;
+    } else if (doclengths[i] == 20) {
+      array_fun_direct[i] = length20;
+    } else if (doclengths[i] == 21) {
+      array_fun_direct[i] = length21;
+    } else if (doclengths[i] == 22) {
+      array_fun_direct[i] = length22;
+    } else if (doclengths[i] == 23) {
+      array_fun_direct[i] = length23;
+    } else if (doclengths[i] == 24) {
+      array_fun_direct[i] = length24;
+    } else if (doclengths[i] == 25) {
+      array_fun_direct[i] = length25;
+    } else if (doclengths[i] == 26) {
+      array_fun_direct[i] = length26;
+    } else if (doclengths[i] == 27) {
+      array_fun_direct[i] = length27;
+    } else if (doclengths[i] == 28) {
+      array_fun_direct[i] = length28;
+    } else if (doclengths[i] == 29) {
+      array_fun_direct[i] = length29;
+    } else if (doclengths[i] == 30) {
+      array_fun_direct[i] = length30;
+    } else if (doclengths[i] == 31) {
+      array_fun_direct[i] = length31;
+    } else if (doclengths[i] == 32) {
+      array_fun_direct[i] = length32;
+    } else if (doclengths[i] == 33) {
+      array_fun_direct[i] = length33;
+    } else if (doclengths[i] == 34) {
+      array_fun_direct[i] = length34;
+    } else if (doclengths[i] == 35) {
+      array_fun_direct[i] = length35;
+    } else if (doclengths[i] == 36) {
+      array_fun_direct[i] = length36;
+    } else if (doclengths[i] == 37) {
+      array_fun_direct[i] = length37;
+    } else if (doclengths[i] == 38) {
+      array_fun_direct[i] = length38;
+    } else if (doclengths[i] == 39) {
+      array_fun_direct[i] = length39;
+    } else if (doclengths[i] == 40) {
+      array_fun_direct[i] = length40;
+    } else if (doclengths[i] == 41) {
+      array_fun_direct[i] = length41;
+    } else if (doclengths[i] == 42) {
+      array_fun_direct[i] = length42;
+    } else if (doclengths[i] == 43) {
+      array_fun_direct[i] = length43;
+    } else if (doclengths[i] == 44) {
+      array_fun_direct[i] = length44;
+    } else if (doclengths[i] == 45) {
+      array_fun_direct[i] = length45;
+    } else if (doclengths[i] == 46) {
+      array_fun_direct[i] = length46;
+    } else if (doclengths[i] == 47) {
+      array_fun_direct[i] = length47;
+    } else if (doclengths[i] == 48) {
+      array_fun_direct[i] = length48;
+    } else if (doclengths[i] == 49) {
+      array_fun_direct[i] = length49;
+    }
+    if (i % 1000000 == 0 ) printf("  %d terms...\n", i);
+  }
+  printf("Total of %d terms mapped\n\n", i);
+}
