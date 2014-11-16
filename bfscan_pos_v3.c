@@ -35,35 +35,50 @@ int main(int argc, const char* argv[]) {
     float* min_key;
     int* min_val;
 
-    int tf = 0;
+    // int tf = 0;
     if ( topics2011[n][1] == 2 ) {
       for (i=0; i<NUM_DOCS; i++) {
         score1 = 0;
         score2 = 0;
 
-        tf = 0;
+        int tf1 = 0;
+        int tf2 = 0;
+        int tf3 = 0;
+        int tf4 = 0;
         for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][2]) tf ++;
+          if (collection_pos[base+j] == topics2011[n][2]) tf1 ++;
+          if (collection_pos[base+j] == topics2011[n][3]) tf2 ++;
+          if (collection_pos[base+j] == topics2011[n+1][2]) tf3 ++;
+          if (collection_pos[base+j] == topics2011[n+1][3]) tf4 ++;
         }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf1 > 0) score1+=log10(1 + tf1/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf2 > 0) score1+=log10(1 + tf2/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf3 > 0) score2+=log10(1 + tf3/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf4 > 0) score2+=log10(1 + tf4/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][2]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
         
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][3]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][3]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][2]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][2]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][3]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][3]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
         if (score1 > 0) {
           int size = heap_size(&h1);
@@ -113,41 +128,62 @@ int main(int argc, const char* argv[]) {
         score1 = 0;
         score2 = 0;
 
-        tf = 0;
+        int tf1 = 0;
+        int tf2 = 0;
+        int tf3 = 0;
+        int tf4 = 0;
+        int tf5 = 0;
+        int tf6 = 0;
         for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][2]) tf ++;
+          if (collection_pos[base+j] == topics2011[n][2]) tf1 ++;
+          if (collection_pos[base+j] == topics2011[n][3]) tf2 ++;
+          if (collection_pos[base+j] == topics2011[n][4]) tf3 ++;
+          if (collection_pos[base+j] == topics2011[n+1][2]) tf4 ++;
+          if (collection_pos[base+j] == topics2011[n+1][3]) tf5 ++;
+          if (collection_pos[base+j] == topics2011[n+1][4]) tf6 ++;
         }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf1 > 0) score1+=log10(1 + tf1/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf2 > 0) score1+=log10(1 + tf2/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf3 > 0) score1+=log10(1 + tf3/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf4 > 0) score2+=log10(1 + tf4/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf5 > 0) score2+=log10(1 + tf5/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf6 > 0) score2+=log10(1 + tf6/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][2]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
         
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][3]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][3]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][4]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][4]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][2]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][2]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][3]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][3]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][4]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][4]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
         if (score1 > 0) {
           int size = heap_size(&h1);
@@ -197,53 +233,80 @@ int main(int argc, const char* argv[]) {
         score1 = 0;
         score2 = 0;
 
-        tf = 0;
+        int tf1 = 0;
+        int tf2 = 0;
+        int tf3 = 0;
+        int tf4 = 0;
+        int tf5 = 0;
+        int tf6 = 0;
+        int tf7 = 0;
+        int tf8 = 0;
         for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][2]) tf ++;
+          if (collection_pos[base+j] == topics2011[n][2]) tf1 ++;
+          if (collection_pos[base+j] == topics2011[n][3]) tf2 ++;
+          if (collection_pos[base+j] == topics2011[n][4]) tf3 ++;
+          if (collection_pos[base+j] == topics2011[n][5]) tf4 ++;
+          if (collection_pos[base+j] == topics2011[n+1][2]) tf5 ++;
+          if (collection_pos[base+j] == topics2011[n+1][3]) tf6 ++;
+          if (collection_pos[base+j] == topics2011[n+1][4]) tf7 ++;
+          if (collection_pos[base+j] == topics2011[n+1][5]) tf8 ++;
         }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf1 > 0) score1+=log10(1 + tf1/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf2 > 0) score1+=log10(1 + tf2/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf3 > 0) score1+=log10(1 + tf3/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf4 > 0) score1+=log10(1 + tf4/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf5 > 0) score2+=log10(1 + tf5/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf6 > 0) score2+=log10(1 + tf6/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf7 > 0) score2+=log10(1 + tf7/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf8 > 0) score2+=log10(1 + tf8/(MU * (cf[topics2011[n+1][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][2]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
         
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][3]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][3]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][4]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][4]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][5]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][5]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][2]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][2]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][3]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][3]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][4]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][4]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][5]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][5]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
 
         if (score1 > 0) {
@@ -294,65 +357,99 @@ int main(int argc, const char* argv[]) {
         score1 = 0;
         score2 = 0;
 
-        tf = 0;
+        int tf1 = 0;
+        int tf2 = 0;
+        int tf3 = 0;
+        int tf4 = 0;
+        int tf5 = 0;
+        int tf6 = 0;
+        int tf7 = 0;
+        int tf8 = 0;
+        int tf9 = 0;
+        int tf10 = 0;
         for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][2]) tf ++;
+          if (collection_pos[base+j] == topics2011[n][2]) tf1 ++;
+          if (collection_pos[base+j] == topics2011[n][3]) tf2 ++;
+          if (collection_pos[base+j] == topics2011[n][4]) tf3 ++;
+          if (collection_pos[base+j] == topics2011[n][5]) tf4 ++;
+          if (collection_pos[base+j] == topics2011[n][6]) tf5 ++;
+          if (collection_pos[base+j] == topics2011[n+1][2]) tf6 ++;
+          if (collection_pos[base+j] == topics2011[n+1][3]) tf7 ++;
+          if (collection_pos[base+j] == topics2011[n+1][4]) tf8 ++;
+          if (collection_pos[base+j] == topics2011[n+1][5]) tf9 ++;
+          if (collection_pos[base+j] == topics2011[n+1][6]) tf10 ++;
         }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf1 > 0) score1+=log10(1 + tf1/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf2 > 0) score1+=log10(1 + tf2/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf3 > 0) score1+=log10(1 + tf3/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf4 > 0) score1+=log10(1 + tf4/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf5 > 0) score1+=log10(1 + tf5/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf6 > 0) score2+=log10(1 + tf6/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf7 > 0) score2+=log10(1 + tf7/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf8 > 0) score2+=log10(1 + tf8/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf9 > 0) score2+=log10(1 + tf9/(MU * (cf[topics2011[n+1][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        if (tf10 > 0) score2+=log10(1 + tf10/(MU * (cf[topics2011[n+1][6]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+
+
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][2]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
         
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][3]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][3]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][4]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][4]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][5]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][5]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n][6]) tf ++;
-        }
-        if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n][6]) tf ++;
+        // }
+        // if (tf > 0) score1+=log10(1 + tf/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][2]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][2]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][3]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][3]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][4]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][4]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][5]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][5]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][5]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
-        tf = 0;
-        for (j=0; j<doclengths[i]; j++) {
-          if (collection_pos[base+j] == topics2011[n+1][6]) tf ++;
-        }
-        if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][6]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
+        // tf = 0;
+        // for (j=0; j<doclengths[i]; j++) {
+        //   if (collection_pos[base+j] == topics2011[n+1][6]) tf ++;
+        // }
+        // if (tf > 0) score2+=log10(1 + tf/(MU * (cf[topics2011[n+1][6]] + 1) / (TOTAL_TERMS + 1))) + log10(MU / (doclengths[i] + MU));
 
         if (score1 > 0) {
           int size = heap_size(&h1);
