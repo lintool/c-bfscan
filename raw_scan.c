@@ -6,10 +6,10 @@
 
 #include "constants.h"
 
-extern void init();
+extern void init_pos();
 
 int main(int argc, const char* argv[]) {
-  init();
+  init_pos();
   int i=0, j=0;
 
   clock_t begin, end;
@@ -20,7 +20,7 @@ int main(int argc, const char* argv[]) {
   long sum = 0;
   for (i=0; i<NUM_DOCS; i++) {
     for (j=0; j<doclengths[i]; j++) {
-      sum += collection[base+j];
+      sum += collection_pos[base+j];
     }
     base += doclengths[i];
   }
