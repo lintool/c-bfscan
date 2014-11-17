@@ -42,9 +42,11 @@ For each topic:
 For each topic:
 
 - Loop over all documents
-- Separate code path for queries of different lengths
+- Loop over all query terms
 - Loop over terms in document
 - Compute score
+
+Note that implementations 1 and 2 differ in the order of the document terms and query terms loop.
 
 **Implementation 3**
 
@@ -52,9 +54,18 @@ For each topic:
 
 - Loop over all documents
 - Separate code path for queries of different lengths
-- Use a dispatch table to dispatch to a separate function to process documents of different lengths
+- Loop over terms in document
+- Compute score
 
 **Implementation 4**
+
+For each topic:
+
+- Loop over all documents
+- Separate code path for queries of different lengths
+- Use a dispatch table to dispatch to a separate function to process documents of different lengths
+
+**Implementation 5**
 
 For each topic:
 
@@ -64,7 +75,7 @@ For each topic:
 
 So we have:
 
-- `bfscan_pos_v1`, `bfscan_pos_v2`, `bfscan_pos_v3`, `bfscan_pos_v4`
-- `bfscan_tf_v1`, `bfscan_tf_v2`, `bfscan_tf_v3`, `bfscan_tf_v4`
+- `bfscan_pos_v1`, `bfscan_pos_v2`, `bfscan_pos_v3`, `bfscan_pos_v4`, `bfscan_pos_v5`
+- `bfscan_tf_v1`, `bfscan_tf_v2`, `bfscan_tf_v3`, `bfscan_tf_v4`, `bfscan_tf_v5`
 
 All of these process a single query at a time (then we have separate versions that process different numbers of queries at a time).
