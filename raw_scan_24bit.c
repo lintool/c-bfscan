@@ -30,7 +30,7 @@ int main(int argc, const char* argv[]) {
   }
 
   printf("sum = %ld\n", sum);
-
+  
   end = clock();
   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
   printf("Total time = %f ms\n", time_spent * 1000);
