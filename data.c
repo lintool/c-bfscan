@@ -13,7 +13,7 @@ void init_sharedata() {
   ssize_t read;
 
   int i=0;
-  fp = fopen("data/doc_id.txt", "r");
+  fp = fopen(DATA_PATH "doc_id.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading tweetids from doc_id.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -24,7 +24,7 @@ void init_sharedata() {
   fclose(fp);
 
   i=0;
-  fp = fopen("data/cf_table.txt", "r");
+  fp = fopen(DATA_PATH "cf_table.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading cfs from cf_table.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -46,7 +46,7 @@ void init_pos() {
   ssize_t read;
 
   int i=0;
-  fp = fopen("data/all_terms.txt", "r");
+  fp = fopen(DATA_PATH "all_terms.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading collection from all_terms.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -57,7 +57,7 @@ void init_pos() {
   fclose(fp);
 
   i=0;
-  fp = fopen("data/doc_length.txt", "r");
+  fp = fopen(DATA_PATH "doc_length.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading doclengths from doc_length.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -81,7 +81,7 @@ void init_tf() {
   ssize_t read;
 
   int i=0;
-  fp = fopen("data/all_terms_ordered.txt", "r");
+  fp = fopen(DATA_PATH "all_terms_ordered.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading collection from all_terms_ordered.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -92,7 +92,7 @@ void init_tf() {
   fclose(fp);
 
   i=0;
-  fp = fopen("data/all_terms_tf.txt", "r");
+  fp = fopen(DATA_PATH "all_terms_tf.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }  
   printf("-> Reading tf from all_terms_tf.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -103,7 +103,7 @@ void init_tf() {
   fclose(fp);
 
   i=0;
-  fp = fopen("data/doc_length_ordered.txt", "r");
+  fp = fopen(DATA_PATH "doc_length_ordered.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading doclengths from doc_length_ordered.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -114,7 +114,7 @@ void init_tf() {
   fclose(fp);
 
   i=0;
-  fp = fopen("data/doc_length.txt", "r");
+  fp = fopen(DATA_PATH "doc_length.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading doclengths from doc_length.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -139,7 +139,7 @@ void init_24bit() {
 
   int i=0;
   int j=0;
-  fp = fopen("data/all_terms.txt", "r");
+  fp = fopen(DATA_PATH "all_terms.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading collection from all_terms.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
@@ -154,7 +154,7 @@ void init_24bit() {
   fclose(fp);
 
   i=0;
-  fp = fopen("data/doc_length.txt", "r");
+  fp = fopen(DATA_PATH "doc_length.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }  
   printf("-> Reading doclengths from doc_length.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {

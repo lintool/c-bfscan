@@ -5,7 +5,8 @@
 #include <string.h>
 
 #include "heap.h"
-#include "topics2011_reordered.h"
+#include "topics2011.h"
+#include "topics2011_time.h"
 #include "constants.h"
 
 extern void init_tf();
@@ -20,278 +21,304 @@ int main(int argc, const char* argv[]) {
   begin = clock();
 
   int base = 0;
-  float score1, score2;
+  float score;
 
   int n;
 
-  for (n=0; n<42; n+=2) {
-    base = 0;
+  for (n=0; n<NUM_TOPICS; n++) {
+    // printf("Processing topic %d...\n", topics2011[n][0]);
 
-    heap h1;
-    heap_create(&h1,0,NULL);
-    heap h2;
-    heap_create(&h2,0,NULL);
+    heap h;
+    heap_create(&h,0,NULL);
 
     float* min_key;
     int* min_val;
 
-    if ( topics2011[n][1] == 2 ) {
-      double prob11, prob12;
-      double prob21, prob22;
-      prob11 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
-      prob12 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
-      prob21 = MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1);
-      prob22 = MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1);
+    base = 0;
+    if ( topics2011[n][1] == 1 ) {
+      double prob1;
+      prob1 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
       for (i=0; i<NUM_DOCS; i++) {
-        score1 = 0;
-        score2 = 0;
-        double plus = log10(MU / (doclengths[i] + MU));
+        if (tweetids[i] > topics2011_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        double plus = log(MU / (doclengths[i] + MU));
 
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][2], prob11, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][3], prob12, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][2], prob21, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][3], prob22, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][2], prob1, plus);
         
-        if (score1 > 0) {
-          int size = heap_size(&h1);
+        if (score > 0) {
+          int size = heap_size(&h);
 
           if ( size < TOP_K ) {
             int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score1;
-            heap_insert(&h1, scorez, docid);
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
           } else {
-            heap_min(&h1, (void**)&min_key, (void**)&min_val);
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
 
-            if (score1 > *min_key) {
-              heap_delmin(&h1, (void**)&min_key, (void**)&min_val);
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
 
               int *docid = malloc(sizeof(int)); *docid = i;
-              float *scorez = malloc(sizeof(float)); *scorez = score1;
-              heap_insert(&h1, scorez, docid);
-            }
-          }
-        }
-
-        if (score2 > 0) {
-          int size = heap_size(&h2);
-
-          if ( size < TOP_K ) {
-            int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score2;
-            heap_insert(&h2, scorez, docid);
-          } else {
-            heap_min(&h2, (void**)&min_key, (void**)&min_val);
-
-            if (score2 > *min_key) {
-              heap_delmin(&h2, (void**)&min_key, (void**)&min_val);
-
-              int *docid = malloc(sizeof(int)); *docid = i;
-              float *scorez = malloc(sizeof(float)); *scorez = score2;
-              heap_insert(&h2, scorez, docid);
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
             }
           }
         }
 
         base += doclengths_ordered[i];
       }
-    } else
-    if ( topics2011[n][1] == 3 ) {
-      double prob11, prob12, prob13;
-      double prob21, prob22, prob23;
-      prob11 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
-      prob12 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
-      prob13 = MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1);
-      prob21 = MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1);
-      prob22 = MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1);
-      prob23 = MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1);
+    } else if ( topics2011[n][1] == 2 ) {
+      double prob1, prob2;
+      prob1 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
+      prob2 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
       for (i=0; i<NUM_DOCS; i++) {
-        score1 = 0;
-        score2 = 0;
-        double plus = log10(MU / (doclengths[i] + MU));
+        if (tweetids[i] > topics2011_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        double plus = log(MU / (doclengths[i] + MU));
 
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][2], prob11, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][3], prob12, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][4], prob13, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][2], prob21, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][3], prob22, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][4], prob23, plus);
-
-        if (score1 > 0) {
-          int size = heap_size(&h1);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][2], prob1, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][3], prob2, plus);
+        
+        if (score > 0) {
+          int size = heap_size(&h);
 
           if ( size < TOP_K ) {
             int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score1;
-            heap_insert(&h1, scorez, docid);
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
           } else {
-            heap_min(&h1, (void**)&min_key, (void**)&min_val);
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
 
-            if (score1 > *min_key) {
-              heap_delmin(&h1, (void**)&min_key, (void**)&min_val);
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
 
               int *docid = malloc(sizeof(int)); *docid = i;
-              float *scorez = malloc(sizeof(float)); *scorez = score1;
-              heap_insert(&h1, scorez, docid);
-            }
-        }
-        }
-
-        if (score2 > 0) {
-          int size = heap_size(&h2);
-
-          if ( size < TOP_K ) {
-            int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score2;
-            heap_insert(&h2, scorez, docid);
-          } else {
-            heap_min(&h2, (void**)&min_key, (void**)&min_val);
-
-            if (score2 > *min_key) {
-              heap_delmin(&h2, (void**)&min_key, (void**)&min_val);
-
-              int *docid = malloc(sizeof(int)); *docid = i;
-              float *scorez = malloc(sizeof(float)); *scorez = score2;
-              heap_insert(&h2, scorez, docid);
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
             }
           }
         }
 
         base += doclengths_ordered[i];
       }
-    } else
-    if ( topics2011[n][1] == 4 ) {
-      double prob11, prob12, prob13, prob14;
-      double prob21, prob22, prob23, prob24;
-      prob11 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
-      prob12 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
-      prob13 = MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1);
-      prob14 = MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1);
-      prob21 = MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1);
-      prob22 = MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1);
-      prob23 = MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1);
-      prob24 = MU * (cf[topics2011[n+1][5]] + 1) / (TOTAL_TERMS + 1);
+    } else if ( topics2011[n][1] == 3 ) {
+      double prob1, prob2, prob3;
+      prob1 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
+      prob2 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
+      prob3 = MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1);
       for (i=0; i<NUM_DOCS; i++) {
-        score1 = 0;
-        score2 = 0;
-        double plus = log10(MU / (doclengths[i] + MU));
-
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][2], prob11, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][3], prob12, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][4], prob13, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][5], prob14, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][2], prob21, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][3], prob22, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][4], prob23, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][5], prob24, plus);
-
-        if (score1 > 0) {
-          int size = heap_size(&h1);
-
-          if ( size < TOP_K ) {
-            int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score1;
-            heap_insert(&h1, scorez, docid);
-          } else {
-            heap_min(&h1, (void**)&min_key, (void**)&min_val);
-
-            if (score1 > *min_key) {
-              heap_delmin(&h1, (void**)&min_key, (void**)&min_val);
-
-              int *docid = malloc(sizeof(int)); *docid = i;
-              float *scorez = malloc(sizeof(float)); *scorez = score1;
-              heap_insert(&h1, scorez, docid);
-            }
-          }
+        if (tweetids[i] > topics2011_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
         }
+        score = 0;
+        double plus = log(MU / (doclengths[i] + MU));
 
-        if (score2 > 0) {
-          int size = heap_size(&h2);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][2], prob1, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][3], prob2, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][4], prob3, plus);
+
+        if (score > 0) {
+          int size = heap_size(&h);
 
           if ( size < TOP_K ) {
             int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score2;
-            heap_insert(&h2, scorez, docid);
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
           } else {
-            heap_min(&h2, (void**)&min_key, (void**)&min_val);
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
 
-            if (score2 > *min_key) {
-              heap_delmin(&h2, (void**)&min_key, (void**)&min_val);
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
 
               int *docid = malloc(sizeof(int)); *docid = i;
-              float *scorez = malloc(sizeof(float)); *scorez = score2;
-              heap_insert(&h2, scorez, docid);
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
             }
           }
         }
 
         base += doclengths_ordered[i];
       }
-    }else
-    if ( topics2011[n][1] == 5 ) {
-      double prob11, prob12, prob13, prob14, prob15;
-      double prob21, prob22, prob23, prob24, prob25;
-      prob11 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
-      prob12 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
-      prob13 = MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1);
-      prob14 = MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1);
-      prob15 = MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1);
-      prob21 = MU * (cf[topics2011[n+1][2]] + 1) / (TOTAL_TERMS + 1);
-      prob22 = MU * (cf[topics2011[n+1][3]] + 1) / (TOTAL_TERMS + 1);
-      prob23 = MU * (cf[topics2011[n+1][4]] + 1) / (TOTAL_TERMS + 1);
-      prob24 = MU * (cf[topics2011[n+1][5]] + 1) / (TOTAL_TERMS + 1);
-      prob25 = MU * (cf[topics2011[n+1][6]] + 1) / (TOTAL_TERMS + 1);
+    } else if ( topics2011[n][1] == 4 ) {
+      double prob1, prob2, prob3, prob4;
+      prob1 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
+      prob2 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
+      prob3 = MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1);
+      prob4 = MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1);
       for (i=0; i<NUM_DOCS; i++) {
-        score1 = 0;
-        score2 = 0;
-        double plus = log10(MU / (doclengths[i] + MU));
+        if (tweetids[i] > topics2011_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        double plus = log(MU / (doclengths[i] + MU));
 
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][2], prob11, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][3], prob12, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][4], prob13, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][5], prob14, plus);
-        score1 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n][6], prob15, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][2], prob21, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][3], prob22, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][4], prob23, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][5], prob24, plus);
-        score2 += (*array_fun[doclengths_ordered[i] - 1])(collection_tf, tf, base, topics2011[n+1][6], prob25, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][2], prob1, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][3], prob2, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][4], prob3, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][5], prob4, plus);
 
-        if (score1 > 0) {
-          int size = heap_size(&h1);
+        if (score > 0) {
+          int size = heap_size(&h);
 
           if ( size < TOP_K ) {
             int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score1;
-            heap_insert(&h1, scorez, docid);
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
           } else {
-            heap_min(&h1, (void**)&min_key, (void**)&min_val);
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
 
-            if (score1 > *min_key) {
-              heap_delmin(&h1, (void**)&min_key, (void**)&min_val);
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
 
               int *docid = malloc(sizeof(int)); *docid = i;
-              float *scorez = malloc(sizeof(float)); *scorez = score1;
-              heap_insert(&h1, scorez, docid);
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
             }
           }
         }
 
-        if (score2 > 0) {
-          int size = heap_size(&h2);
+        base += doclengths_ordered[i];
+      }
+    } else if ( topics2011[n][1] == 5 ) {
+      double prob1, prob2, prob3, prob4, prob5;
+      prob1 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
+      prob2 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
+      prob3 = MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1);
+      prob4 = MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1);
+      prob5 = MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1);
+
+      for (i=0; i<NUM_DOCS; i++) {
+        if (tweetids[i] > topics2011_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        double plus = log(MU / (doclengths[i] + MU));
+
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][2], prob1, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][3], prob2, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][4], prob3, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][5], prob4, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][6], prob5, plus);
+
+        if (score > 0) {
+          int size = heap_size(&h);
 
           if ( size < TOP_K ) {
             int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score2;
-            heap_insert(&h2, scorez, docid);
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
           } else {
-            heap_min(&h2, (void**)&min_key, (void**)&min_val);
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
 
-            if (score2 > *min_key) {
-              heap_delmin(&h2, (void**)&min_key, (void**)&min_val);
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
 
               int *docid = malloc(sizeof(int)); *docid = i;
-              float *scorez = malloc(sizeof(float)); *scorez = score2;
-              heap_insert(&h2, scorez, docid);
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
+            }
+          }
+        }
+
+        base += doclengths_ordered[i];
+      } 
+    } else if ( topics2011[n][1] == 6 ) {
+      double prob1, prob2, prob3, prob4, prob5, prob6;
+      prob1 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
+      prob2 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
+      prob3 = MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1);
+      prob4 = MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1);
+      prob5 = MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1);
+      prob6 = MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1);
+
+      for (i=0; i<NUM_DOCS; i++) {
+        if (tweetids[i] > topics2011_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        double plus = log(MU / (doclengths[i] + MU));
+
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][2], prob1, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][3], prob2, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][4], prob3, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][5], prob4, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][6], prob5, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][7], prob6, plus);
+
+        if (score > 0) {
+          int size = heap_size(&h);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
+          } else {
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
+
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
+            }
+          }
+        }
+
+        base += doclengths_ordered[i];
+      }
+    } else if ( topics2011[n][1] == 7 ) {
+      double prob1, prob2, prob3, prob4, prob5, prob6, prob7;
+      prob1 = MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1);
+      prob2 = MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1);
+      prob3 = MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1);
+      prob4 = MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1);
+      prob5 = MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1);
+      prob6 = MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1);
+      prob7 = MU * (cf[topics2011[n][8]] +  1) / (TOTAL_TERMS + 1);
+
+      for (i=0; i<NUM_DOCS; i++) {
+        if (tweetids[i] > topics2011_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        double plus = log(MU / (doclengths[i] + MU));
+
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][2], prob1, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][3], prob2, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][4], prob3, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][5], prob4, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][6], prob5, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][7], prob6, plus);
+        score += (*array_fun[doclengths_ordered[i]])(collection_tf, tf, base, topics2011[n][8], prob7, plus);
+
+        if (score > 0) {
+          int size = heap_size(&h);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
+          } else {
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
+
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
             }
           }
         }
@@ -301,24 +328,17 @@ int main(int argc, const char* argv[]) {
     }
 
     int rank = TOP_K;
-    while (heap_delmin(&h1, (void**)&min_key, (void**)&min_val)) {
-      printf("%d Q0 %ld %d %f bfscan_tf_v4\n", topics2011[n][0], tweetids[*min_val], rank, *min_key);
+    while (heap_delmin(&h, (void**)&min_key, (void**)&min_val)) {
+      printf("MB%02d Q0 %ld %d %f bfscan_tf_v4\n", (n+1), tweetids[*min_val], rank, *min_key);
       rank--;
     }
-    heap_destroy(&h1);
 
-    rank = TOP_K;
-    while (heap_delmin(&h2, (void**)&min_key, (void**)&min_val)) {
-      printf("%d Q0 %ld %d %f bfscan_tf_v4\n", topics2011[n+1][0], tweetids[*min_val], rank, *min_key);
-      rank--;
-    }
-    heap_destroy(&h2);
-
+    heap_destroy(&h);
   }
 
   end = clock();
   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
   printf("Total time = %f ms\n", time_spent * 1000);
-  printf("Time per query = %f ms\n", (time_spent * 1000)/42);
-  printf("Throughput: %f qps\n", 42/time_spent);
+  printf("Time per query = %f ms\n", (time_spent * 1000)/NUM_TOPICS);
+  printf("Throughput: %f qps\n", NUM_TOPICS/time_spent);
 }
