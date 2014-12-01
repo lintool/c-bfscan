@@ -24,6 +24,17 @@ void init_sharedata() {
   fclose(fp);
 
   i=0;
+  fp = fopen(DATA_PATH "doc_length.txt", "r");
+  if (fp == NULL) { printf("Error!\n"); exit(-1); }
+  printf("-> Reading doclengths from doc_length.txt\n");
+  while ((read = getline(&line, &len, fp)) != -1) {
+    doclengths[i++] = atoi(line);
+    if (i % 1000000 == 0 ) printf("  %d lengths...\n", i);
+  }
+  printf("Total of %d doclengths read\n\n", i);
+  fclose(fp);
+
+  i=0;
   fp = fopen(DATA_PATH "cf_table.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading cfs from cf_table.txt\n");
@@ -54,17 +65,6 @@ void init_pos() {
     if (i % 10000000 == 0 ) printf("  %d terms...\n", i);
   }
   printf("Total of %d terms read\n\n", i);
-  fclose(fp);
-
-  i=0;
-  fp = fopen(DATA_PATH "doc_length.txt", "r");
-  if (fp == NULL) { printf("Error!\n"); exit(-1); }
-  printf("-> Reading doclengths from doc_length.txt\n");
-  while ((read = getline(&line, &len, fp)) != -1) {
-    doclengths[i++] = atoi(line);
-    if (i % 1000000 == 0 ) printf("  %d lengths...\n", i);
-  }
-  printf("Total of %d doclengths read\n\n", i);
   fclose(fp);
 
   init_sharedata();
@@ -108,17 +108,6 @@ void init_tf() {
   printf("-> Reading doclengths from doc_length_ordered.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
     doclengths_ordered[i++] = atoi(line);
-    if (i % 1000000 == 0 ) printf("  %d lengths...\n", i);
-  }
-  printf("Total of %d doclengths read\n\n", i);
-  fclose(fp);
-
-  i=0;
-  fp = fopen(DATA_PATH "doc_length.txt", "r");
-  if (fp == NULL) { printf("Error!\n"); exit(-1); }
-  printf("-> Reading doclengths from doc_length.txt\n");
-  while ((read = getline(&line, &len, fp)) != -1) {
-    doclengths[i++] = atoi(line);
     if (i % 1000000 == 0 ) printf("  %d lengths...\n", i);
   }
   printf("Total of %d doclengths read\n\n", i);
