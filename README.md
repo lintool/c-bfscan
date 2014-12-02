@@ -79,3 +79,22 @@ So we have:
 - `bfscan_tf_v1`, `bfscan_tf_v2`, `bfscan_tf_v3`, `bfscan_tf_v4`, `bfscan_tf_v5`
 
 All of these process a single query at a time (then we have separate versions that process different numbers of queries at a time).
+
+**Performance**
+
+Here we show the latency per query in milliseconds for two different implementations.
+
+```
+            v1   v2   v3   v4   v5
+positional  815  630  430
+tf          750  670  405  610  615
+```
+
+Baselines(milliseconds per query):
+
+```
+Lucene              200
+raw_scan            240
+raw_scan_24bits     350
+```
+
