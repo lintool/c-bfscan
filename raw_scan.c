@@ -20,7 +20,9 @@ int main(int argc, const char* argv[]) {
   long sum = 0;
   for (i=0; i<NUM_DOCS; i++) {
     for (j=0; j<doclengths[i]; j++) {
+      if (collection_pos[base+j] == 132948) {
       sum += collection_pos[base+j];
+    }
     }
     base += doclengths[i];
   }

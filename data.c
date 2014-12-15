@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "constants.h"
+#include "simdcomp.h"
 
 void init_sharedata() {
   FILE *fp;
@@ -103,15 +104,60 @@ void init_tf() {
   fclose(fp);
 
   i=0;
+  int sum = 0;
   fp = fopen(DATA_PATH "doc_length_ordered.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading doclengths from doc_length_ordered.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
-    doclengths_ordered[i++] = atoi(line);
+    doclengths_ordered[i] = atoi(line);
+    if (atoi(line) % BLOCK_SIZE == 0) {
+      doclengths_ordered_simd[i] = atoi(line);
+    } else {
+      doclengths_ordered_simd[i] = atoi(line) + (BLOCK_SIZE - atoi(line) % BLOCK_SIZE);
+    }
+    sum += doclengths_ordered_simd[i++];
     if (i % 1000000 == 0 ) printf("  %d lengths...\n", i);
   }
   printf("Total of %d doclengths read\n\n", i);
   fclose(fp);
+
+  collection_tf_simd = malloc(sum * sizeof(uint32_t));
+  tf_simd = malloc(sum * sizeof(uint8_t));
+  int base = 0;
+  int i_simd = 0;
+  for (int ii = 0; ii < NUM_DOCS; ii ++) {
+    for (int jj = 0; jj < doclengths_ordered[ii]; jj ++) {
+      collection_tf_simd[i_simd] = collection_tf[base + jj];
+      tf_simd[i_simd] = tf[base + jj];
+      i_simd++;
+    }
+    for (int jj = doclengths_ordered[ii]; jj < doclengths_ordered_simd[ii]; jj ++) {
+      collection_tf_simd[i_simd] = 0;
+      tf_simd[i_simd] = 0;
+      i_simd++;
+    }
+    base += doclengths_ordered[ii];
+  }
+
+  buffer_tf_input = malloc(sum * sizeof(uint32_t) + sum / SIMDBlockSize);
+  uint8_t * initout = buffer_tf_input;
+  for (size_t k = 0; k < (size_t)sum / SIMDBlockSize; ++k) {
+    uint32_t b = maxbits(collection_tf_simd + k * SIMDBlockSize);
+    *buffer_tf_input++ = b;
+    simdpackwithoutmask(collection_tf_simd + k * SIMDBlockSize, (__m128i *) buffer_tf_input, b);
+    buffer_tf_input += b * sizeof(__m128i);
+  }
+  buffer_tf_input = initout;
+
+  uint8_t * decbuffer = buffer_tf_input;
+  uint32_t * backbuffer = malloc(SIMDBlockSize * sizeof(uint32_t));
+  for (size_t k = 0; k < (size_t)sum / SIMDBlockSize; ++k) {
+    uint8_t b = *decbuffer++;
+    simdunpack((__m128i *) decbuffer, backbuffer, b);
+    decbuffer += b * sizeof(__m128i);
+  }
+
+  // printf("compression ratio = %f \n",  (sum * sizeof(uint32_t))/ ((buffer_tf_input - initout) * 1.0 ));
 
   init_sharedata();
 
