@@ -6,7 +6,7 @@
 CFLAGS = -fPIC -std=c99 -O3 -march=native -Wall -Wextra -pedantic
 LDFLAGS = -shared
 LIBNAME=libsimdcomp.so.0.0.3
-all: bfscan_pos_v1 bfscan_pos_v2 bfscan_pos_v3 bfscan_tf_v1 bfscan_tf_v2 bfscan_tf_v2_simd bfscan_tf_v2_multithread_interquery bfscan_tf_v2_multithread_intraquery bfscan_tf_v3_multithread_interquery bfscan_tf_v3_multithread_intraquery bfscan_tf_v3 bfscan_tf_v4 bfscan_tf_v5 raw_scan raw_scan_24bit
+all: bfscan_pos_v1 bfscan_pos_v2 bfscan_pos_v3 bfscan_tf_v1 bfscan_tf_v2 bfscan_tf_v2_simd bfscan_tf_v2_multithread_interquery bfscan_tf_v2_multithread_intraquery bfscan_tf_v3_multithread_interquery bfscan_tf_v3_multithread_intraquery bfscan_tf_v3_vectorfact bfscan_tf_v3 bfscan_tf_v4 bfscan_tf_v5 raw_scan raw_scan_24bit
 
 HEADERS=./include/simdbitpacking.h ./include/simdcomputil.h ./include/simdintegratedbitpacking.h ./include/simdcomp.h 
 OBJECTS= simdbitpacking.o simdintegratedbitpacking.o simdcomputil.o 
@@ -41,6 +41,12 @@ bfscan_tf_v2: bfscan_tf_v2.c
 bfscan_tf_v2_simd: bfscan_tf_v2_simd.c $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) heap.c data.c -o bfscan_tf_v2_simd ./bfscan_tf_v2_simd.c -Iinclude  $(OBJECTS)
 
+bfscan_tf_v2_vectorfact: bfscan_tf_v2_vectorfact.c $(HEADERS) $(OBJECTS)
+	$(CC) $(CFLAGS) heap.c data.c -o bfscan_tf_v2_vectorfact ./bfscan_tf_v2_vectorfact.c -Iinclude  $(OBJECTS)
+
+bfscan_tf_v2_descending: bfscan_tf_v2_descending.c $(HEADERS) $(OBJECTS)
+	$(CC) $(CFLAGS) heap.c data.c -o bfscan_tf_v2_descending ./bfscan_tf_v2_descending.c -Iinclude  $(OBJECTS)
+
 bfscan_tf_v2_multithread_interquery: bfscan_tf_v2_multithread_interquery.c $(HEADERS) $(OBJECTS)
 	$(CC) $(CFLAGS) heap.c data.c threadpool.c -o bfscan_tf_v2_multithread_interquery ./bfscan_tf_v2_multithread_interquery.c -Iinclude  $(OBJECTS)
 
@@ -50,11 +56,17 @@ bfscan_tf_v2_multithread_intraquery: bfscan_tf_v2_multithread_intraquery.c $(HEA
 bfscan_tf_v3: bfscan_tf_v3.c
 	gcc -O3 -Wall bfscan_tf_v3.c heap.c data.c -o bfscan_tf_v3 -Iinclude  $(OBJECTS)
 
+bfscan_tf_v3_vectorfact: bfscan_tf_v3_vectorfact.c $(HEADERS) $(OBJECTS)
+	$(CC) $(CFLAGS) -msse4.1 -mavx2 heap.c data.c -o bfscan_tf_v3_vectorfact ./bfscan_tf_v3_vectorfact.c -Iinclude  $(OBJECTS)
+
+bfscan_tf_v3_descending: bfscan_tf_v3_descending.c $(HEADERS) $(OBJECTS)
+	$(CC) $(CFLAGS) heap.c data.c -o bfscan_tf_v3_descending ./bfscan_tf_v3_descending.c -Iinclude  $(OBJECTS)
+
 bfscan_tf_v3_multithread_interquery: bfscan_tf_v3_multithread_interquery.c $(HEADERS) $(OBJECTS)
-	$(CC) $(CFLAGS) heap.c data.c threadpool.c -o bfscan_tf_v3_multithread_interquery ./bfscan_tf_v3_multithread_interquery.c -Iinclude  $(OBJECTS)
+	$(CC) $(CFLAGS) heap.c data.c threadpool.c -lm -mcmodel=medium -o bfscan_tf_v3_multithread_interquery ./bfscan_tf_v3_multithread_interquery.c
 
 bfscan_tf_v3_multithread_intraquery: bfscan_tf_v3_multithread_intraquery.c $(HEADERS) $(OBJECTS)
-	$(CC) $(CFLAGS) heap.c data.c threadpool.c -o bfscan_tf_v3_multithread_intraquery ./bfscan_tf_v3_multithread_intraquery.c -Iinclude  $(OBJECTS)
+	$(CC) $(CFLAGS) heap.c data.c threadpool.c -lm -mcmodel=medium -o bfscan_tf_v3_multithread_intraquery ./bfscan_tf_v3_multithread_intraquery.c
 
 bfscan_tf_v4: bfscan_tf_v4.c
 	gcc -O3 -Wall bfscan_tf_v4.c heap.c data.c func_arr.c -o bfscan_tf_v4 -Iinclude  $(OBJECTS)
@@ -67,3 +79,6 @@ raw_scan: raw_scan.c
 
 raw_scan_24bit: raw_scan_24bit.c
 	gcc -O3 -Wall raw_scan_24bit.c data.c -o raw_scan_24bit -Iinclude  $(OBJECTS)
+
+#gcc -msse4.1 -mavx2 -O3 -Wall bfscan_tf_v2_vectorfact.c heap.c data.c -o bfscan_tf_v2_vectorfact
+# gcc -O3 -Wall bfscan_tf_v3_multithread_interquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o bfscan_tf_v3_multithread_interquery -lpthread
