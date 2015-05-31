@@ -7,15 +7,17 @@
 #include "heap.h"
 #include "topics2011.h"
 #include "topics2011_time.h"
+// #include "topics_1000.h"
+// #include "topics_1000_time.h"
 #include "constants.h"
 
 extern void init_tf();
 
 int main(int argc, const char* argv[]) {
   init_tf();
-
+  
   int i=0, j=0;
-
+  
   clock_t begin, end;
   double time_spent;
   begin = clock();
@@ -297,7 +299,7 @@ int main(int argc, const char* argv[]) {
 
     int rank = TOP_K;
     while (heap_delmin(&h, (void**)&min_key, (void**)&min_val)) {
-      printf("MB%02d Q0 %ld %d %f bfscan_tf_v3\n", (n+1), tweetids[*min_val], rank, *min_key);
+      printf("MB%02d Q0 %ld %d %f Scan2\n", (n+1), tweetids[*min_val], rank, *min_key);
       rank--;
     }
 
