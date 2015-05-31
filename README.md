@@ -1,3 +1,5 @@
+The data locates at: /fs/clip-twitter/ylwang/bfscan-statistics/All/
+
 
 **Positional representation**
 
