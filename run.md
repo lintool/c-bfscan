@@ -10,8 +10,9 @@ The multithreading versions are just the files that have the term "multithread" 
 #### How to run
 All the data you need is already there, and the explanation of all the data files are down below. So just follow the instructions below to get the experiment started.
 
-First of all, run the following to enable AVX2.
+First of all, log in to streeling and run the following to enable AVX2
 ```sh
+$ ssh streeling
 $ scl enable devtoolset-3 bash
 ```
 
