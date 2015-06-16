@@ -1,3 +1,4 @@
+#include <stdint.h>
 #define COLLECTION_POS_SIZE 203429861
 #define COLLECTION_TF_SIZE 162603674
 #define NUM_DOCS 16141812
