@@ -3,8 +3,14 @@ all: Scan1 Scan2 AVXScan1 AVXScan2 AVXScan2_Impactscore Scan1_multithread_interq
 Scan1: Scan1.c
 	gcc -O3 -w Scan1.c heap.c data.c -lm -mcmodel=medium -o Scan1
 
+Scan1_pos: Scan1_pos.c
+	gcc -O3 -w Scan1_pos.c heap.c data.c -lm -mcmodel=medium -o Scan1_pos
+
 Scan2: Scan2.c
 	gcc -O3 -w Scan2.c heap.c data.c -lm -mcmodel=medium -o Scan2
+
+Scan2_pos: Scan2_pos.c
+	gcc -O3 -w Scan2_pos.c heap.c data.c -lm -mcmodel=medium -o Scan2_pos
 
 AVXScan1: AVXScan1.c
 	gcc -O3 -w -msse4.1 -mavx2 AVXScan1.c heap.c data.c -lm -mcmodel=medium -o AVXScan1
@@ -21,11 +27,23 @@ Scan1_multithread_interquery: Scan1_multithread_interquery.c
 Scan1_multithread_intraquery: Scan1_multithread_intraquery.c
 	gcc -O3 -w Scan1_multithread_intraquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o Scan1_multithread_intraquery -lpthread
 
+Scan1_pos_multithread_interquery: Scan1_pos_multithread_interquery.c
+	gcc -O3 -w Scan1_pos_multithread_interquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o Scan1_pos_multithread_interquery -lpthread
+
+Scan1_pos_multithread_intraquery: Scan1_pos_multithread_intraquery.c
+	gcc -O3 -w Scan1_pos_multithread_intraquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o Scan1_pos_multithread_intraquery -lpthread
+
 Scan2_multithread_interquery: Scan2_multithread_interquery.c
 	gcc -O3 -w Scan2_multithread_interquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o Scan2_multithread_interquery -lpthread
 
 Scan2_multithread_intraquery: Scan2_multithread_intraquery.c
 	gcc -O3 -w Scan2_multithread_intraquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o Scan2_multithread_intraquery -lpthread
+
+Scan2_pos_multithread_interquery: Scan2_pos_multithread_interquery.c
+	gcc -O3 -w Scan2_pos_multithread_interquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o Scan2_pos_multithread_interquery -lpthread
+
+Scan2_pos_multithread_intraquery: Scan2_pos_multithread_intraquery.c
+	gcc -O3 -w Scan2_pos_multithread_intraquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o Scan2_pos_multithread_intraquery -lpthread
 
 AVXScan1_multithread_interquery: AVXScan1_multithread_interquery.c
 	gcc -O3 -w -msse4.1 -mavx2 AVXScan1_multithread_interquery.c heap.c data.c threadpool.c -lm -mcmodel=medium -o AVXScan1_multithread_interquery -lpthread
