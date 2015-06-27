@@ -87,7 +87,7 @@ int main(int argc, const char* argv[]) {
   }
   int nthreads=atoi(argv[1]);
   printf("Number of threads: %d\n", nthreads);
-  init_tf();
+  init_pos();
   double total = 0;
   int N = 3;
   int count;
