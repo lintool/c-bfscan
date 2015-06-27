@@ -1,8 +1,10 @@
 # Run the experiment
 #### System designs
-There are four different strategies you can run: Scan1, Scan2, AVXScan1, AVXScan2 and each has a multithreading version.
+There are four different strategies you can run: Scan1, Scan1_pos, Scan2, Scan2_pos, AVXScan1, AVXScan2 and each has a multithreading version.
 * Scan1(Scan1.c): use nested for loops
+* Scan1_pos(Scan1_pos.c): Scan1 with no precomputed tfs
 * Scan2(Scan2.c): unroll the for loops that check the query terms
+* Scan2_pos(Scan2_pos.c): Scan2 with no precomputed tfs
 * AVXScan1(AVXScan1.c): add SSE, AVX2 to Scan2
 * AVXScan2(AVXScan2.c): unroll for loop for looping docs based on AVXScan1
 
@@ -27,7 +29,7 @@ To run a multithreading system, take Scan1_multithread_interquery as an example:
 $ make Scan1_multithread_interquery
 $ ./Scan1_multithread_interquery 2
 ```
-Here 2 speicies how many threads that are assigned.
+Here 2 specifies how many threads that are assigned.
 
 ####Run results
 Output results include:
