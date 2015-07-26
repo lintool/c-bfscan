@@ -5,17 +5,14 @@
 #include <string.h>
 
 #include "heap.h"
-#include "topics2011.h"
-#include "topics2011_time.h"
-// #include "topics_1000.h"
-// #include "topics_1000_time.h"
 #include "constants.h"
 #include "threadpool.h"
 
-extern void init_tf();
-
+extern void init_tf(char * data_path);
+int num_docs;
+int total_terms;
+int num_topics;
 int search(int n) {
-  // printf("# Thread working: %u\n", (int)pthread_self());
   int i=0, j=0;
   int base=0;
   float score;
@@ -26,16 +23,16 @@ int search(int n) {
   float* min_key;
   int* min_val;
 
-  for (i=0; i<NUM_DOCS; i++) {
-    if (tweetids[i] > topics2011_time[n]) {
+  for (i=0; i<num_docs; i++) {
+    if (tweetids[i] > topics_time[n]) {
       base += doclengths_ordered[i];
       continue;
     }
     score = 0;
     for (j=0; j<doclengths_ordered[i]; j++) {
-      for (t=2; t<2+topics2011[n][1]; t++) {
-        if (collection_tf[base+j] == topics2011[n][t]) {
-            score += log(1 + tf[base+j]/(MU * (cf[topics2011[n][t]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+      for (t=2; t<2+topics[n][1]; t++) {
+        if (collection_tf[base+j] == topics[n][t]) {
+            score += log(1 + tf[base+j]/(MU * (cf[topics[n][t]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
       }
     }
@@ -74,13 +71,13 @@ int search(int n) {
 }
 
 int main(int argc, const char* argv[]) {
-  if (argc <= 1) {
-    printf("PLEASE ENTER THREAD NUMBER!\n");
+  if (argc <= 2) {
+    printf("PLEASE ENTER DATA PATH AND THREAD NUMBER!\n");
     return 0;
   }
-  int nthreads=atoi(argv[1]);
+  int nthreads=atoi(argv[2]);
   printf("Number of threads: %d\n", nthreads);
-  init_tf();
+  init_tf(argv[1]);
   double total = 0;
   int N = 3;
   int count;
@@ -92,8 +89,7 @@ int main(int argc, const char* argv[]) {
     pool = threadpool_init(nthreads);
     gettimeofday(&begin, NULL);
     int n;
-    for (n=0; n<NUM_TOPICS; n++) {
-      // printf("Processing topic %d...\n", topics2011[n][0]);
+    for (n=0; n<num_topics; n++) {
       threadpool_add_task(pool,search,(void*)n,0);
     }
     threadpool_free(pool,1);
@@ -103,5 +99,5 @@ int main(int argc, const char* argv[]) {
     total = total + time_spent / 1000.0;
   }
   printf("Total time = %f ms\n", total/N);
-  printf("Throughput: %f qps\n", NUM_TOPICS/(total/N) * 1000);
+  printf("Throughput: %f qps\n", num_topics/(total/N) * 1000);
 }

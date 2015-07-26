@@ -5,17 +5,15 @@
 #include <string.h>
 
 #include "heap.h"
-#include "topics2011.h"
-#include "topics2011_time.h"
-// #include "topics_1000.h"
-// #include "topics_1000_time.h"
 #include "constants.h"
 #include "immintrin.h"
 
 extern void init_tf();
-
+int num_docs;
+int total_terms;
+int num_topics;
 int main(int argc, const char* argv[]) {
-  init_tf();
+  init_tf(argv[1]);
 
   int i=0, j=0;
   clock_t begin, end;
@@ -35,7 +33,6 @@ int main(int argc, const char* argv[]) {
   int jump = 6;
 
   for (n=0; n<NUM_TOPICS; n++) {
-    // printf("Processing topic %d...\n", topics2011[n][0]);
 
     heap h;
     heap_create(&h,0,NULL);

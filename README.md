@@ -1,102 +1,64 @@
-The data locates at: /fs/clip-twitter/ylwang/bfscan-statistics/All/
+System design
+--------------
+There are four different strategies you can run: Scan1, Scan2, AVXScan1, AVXScan2 and each has a multithreading version.
+* Scan1(Scan1.c): use nested for loops
+* Scan2(Scan2.c): unroll the for loops that check the query terms
+* AVXScan1(AVXScan1.c): add SSE, AVX2 to Scan2
+* AVXScan2(AVXScan2.c): unroll for loop for looping docs based on AVXScan1
 
+The multithreading versions are just the files that have the term "multithread" in it and all the files are self-explanatory.
 
-**Positional representation**
-
-The positional representation is simply a sequence of termids, one for each document position:
-
-```
-352
-931
-64
-352
-846
-...
-```
-
-That is, term 352 appears in position 0, term 931 appears in position 1, etc.
-
-**TF representation**
-
-The TF representation requires two parallel arrays, and in essence "pre-aggregates" the TF within each document:
+Getting Started
+--------------
+You can clone the repo with the following command:
 
 ```
-352  2
-931  1
-64   1
-846  1
-...
-```
+$ git clone git://github.com/lintool/c-bfscan.git
+``` 
 
-In other words, term 352 appears twice (i.e., has *tf* = 2).
-
-**Implementation 1**
-
-For each topic:
-
-- Loop over all documents
-- Loop over terms in document
-- Loop over all query terms
-- Compute score
-
-**Implementation 2**
-
-For each topic:
-
-- Loop over all documents
-- Loop over all query terms
-- Loop over terms in document
-- Compute score
-
-Note that implementations 1 and 2 differ in the order of the document terms and query terms loop.
-
-**Implementation 3**
-
-For each topic:
-
-- Loop over all documents
-- Separate code path for queries of different lengths
-- Loop over terms in document
-- Compute score
-
-**Implementation 4**
-
-For each topic:
-
-- Loop over all documents
-- Separate code path for queries of different lengths
-- Use a dispatch table to dispatch to a separate function to process documents of different lengths
-
-**Implementation 5**
-
-For each topic:
-
-- Loop over an array of function pointers that points to functions that process documents of different lengths
-- Separate code path for queries of different lengths
-
-
-So we have:
-
-- `bfscan_pos_v1`, `bfscan_pos_v2`, `bfscan_pos_v3`, `bfscan_pos_v4`, `bfscan_pos_v5`
-- `bfscan_tf_v1`, `bfscan_tf_v2`, `bfscan_tf_v3`, `bfscan_tf_v4`, `bfscan_tf_v5`
-
-All of these process a single query at a time (then we have separate versions that process different numbers of queries at a time).
-
-**Performance**
-
-Here we show the latency per query in milliseconds for two different implementations.
+Once you've cloned the repository, change directory into `twitter-tools-core` and build the package with Maven:
 
 ```
-            v1   v2   v3   v4   v5
-positional  815  630  430
-tf          750  670  405  610  615
+$ cd c-bfscan/twitter-tools-core
+$ mvn clean package appassembler:assemble
 ```
 
-Baselines(milliseconds per query):
+Build the index on the data collection:
 
 ```
-Lucene              200
-raw_scan            240
-raw_scan_24bits     350
+$ sh target/appassembler/bin/IndexStatuses -collection {collectionPath} -index {indexPath}
 ```
 
+Generate document pool, where the dataPath is the path that stores the document pool.
+
+```
+$ sh target/appassembler/bin/GenerateStatistics -collection {collectionPath} -index {indexPath} -output {dataPath}
+```
+
+Convert TREC query to the query that can be fed to c-bfscan, note that outputFile is the new format of the query and needs to be a .h file:
+
+```
+$ sh target/appassembler/bin/GenerateQuery -index {indexPath} -query {queryPath} -output {outputPath/newQuery.h}
+```
+
+Go back to the main repository:
+
+```
+$ cd ..
+```
+
+To run system Scan1:
+
+```
+$ gcc -O3 -w Scan1.c heap.c data.c -o Scan1 -include {newQuery.h}
+$ ./Scan1 {dataPath}
+```
+
+To run AVXScan1 and AVXScan2, make sure that your computer supports AVX2 instructions.
+
+To run system AVXScan1:
+
+```
+$ gcc -O3 -w -msse4.1 -mavx2 AVXScan1.c heap.c data.c -o AVXScan1 -include {newQuery.h}
+$ ./AVXScan1 {dataPath}
+```

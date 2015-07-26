@@ -5,16 +5,14 @@
 #include <string.h>
 
 #include "heap.h"
-#include "topics2011.h"
-#include "topics2011_time.h"
-// #include "topics_1000.h"
-// #include "topics_1000_time.h"
 #include "constants.h"
 
-extern void init_tf();
-
+extern void init_tf(char * data_path);
+int num_docs;
+int total_terms;
+int num_topics;
 int main(int argc, const char* argv[]) {
-  init_tf();
+  init_tf(argv[1]);
   
   int i=0, j=0;
   
@@ -28,9 +26,7 @@ int main(int argc, const char* argv[]) {
   int n;
   int t;
 
-  for (n=0; n<NUM_TOPICS; n++) {
-    // printf("Processing topic %d...\n", topics2011[n][0]);
-
+  for (n=0; n<num_topics; n++) {
     heap h;
     heap_create(&h,0,NULL);
 
@@ -38,16 +34,16 @@ int main(int argc, const char* argv[]) {
     int* min_val;
 
     base = 0;
-    if ( topics2011[n][1] == 2 ) {
-      for (i=0; i<NUM_DOCS; i++) {
-        if (tweetids[i] > topics2011_time[n]) {
+    if ( topics[n][1] == 2 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
           base += doclengths_ordered[i];
           continue;
         }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
-          if (collection_tf[base+j] == topics2011[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
 
         if (score > 0) {
@@ -73,17 +69,17 @@ int main(int argc, const char* argv[]) {
         base += doclengths_ordered[i];
       }
 
-    } else if ( topics2011[n][1] == 3 ) {
-      for (i=0; i<NUM_DOCS; i++) {
-        if (tweetids[i] > topics2011_time[n]) {
+    } else if ( topics[n][1] == 3 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
           base += doclengths_ordered[i];
           continue;
         }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
-          if (collection_tf[base+j] == topics2011[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
 
         if (score > 0) {
@@ -108,18 +104,18 @@ int main(int argc, const char* argv[]) {
 
         base += doclengths_ordered[i];
       }
-    } else if ( topics2011[n][1] == 4 ) {
-      for (i=0; i<NUM_DOCS; i++) {
-        if (tweetids[i] > topics2011_time[n]) {
+    } else if ( topics[n][1] == 4 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
           base += doclengths_ordered[i];
           continue;
         }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
-          if (collection_tf[base+j] == topics2011[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
 
         if (score > 0) {
@@ -144,19 +140,19 @@ int main(int argc, const char* argv[]) {
 
         base += doclengths_ordered[i];
       }
-    } else if ( topics2011[n][1] == 5 ) {
-      for (i=0; i<NUM_DOCS; i++) {
-        if (tweetids[i] > topics2011_time[n]) {
+    } else if ( topics[n][1] == 5 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
           base += doclengths_ordered[i];
           continue;
         }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
-          if (collection_tf[base+j] == topics2011[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
 
         if (score > 0) {
@@ -181,20 +177,20 @@ int main(int argc, const char* argv[]) {
 
         base += doclengths_ordered[i];
       }
-    } else if ( topics2011[n][1] == 6 ) {
-      for (i=0; i<NUM_DOCS; i++) {
-        if (tweetids[i] > topics2011_time[n]) {
+    } else if ( topics[n][1] == 6 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
           base += doclengths_ordered[i];
           continue;
         }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
-          if (collection_tf[base+j] == topics2011[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][7]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][7]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
 
         if (score > 0) {
@@ -219,21 +215,21 @@ int main(int argc, const char* argv[]) {
 
         base += doclengths_ordered[i];
       }
-    } else if ( topics2011[n][1] == 7 ) {
-      for (i=0; i<NUM_DOCS; i++) {
-        if (tweetids[i] > topics2011_time[n]) {
+    } else if ( topics[n][1] == 7 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
           base += doclengths_ordered[i];
           continue;
         }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
-          if (collection_tf[base+j] == topics2011[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][7]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          if (collection_tf[base+j] == topics2011[n][8]) score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][7]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][8]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
 
         if (score > 0) {
@@ -259,16 +255,16 @@ int main(int argc, const char* argv[]) {
         base += doclengths_ordered[i];
       }
     } else {
-      for (i=0; i<NUM_DOCS; i++) {
-        if (tweetids[i] > topics2011_time[n]) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
           base += doclengths_ordered[i];
           continue;
         }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
-          for (t=2; t<2+topics2011[n][1]; t++) {
-            if ( collection_tf[base+j] == topics2011[n][t]) {
-              score+=log(1 + tf[base+j]/(MU * (cf[topics2011[n][t]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          for (t=2; t<2+topics[n][1]; t++) {
+            if ( collection_tf[base+j] == topics[n][t]) {
+              score+=log(1 + tf[base+j]/(MU * (cf[topics[n][t]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
             }
           }
         }
@@ -309,6 +305,6 @@ int main(int argc, const char* argv[]) {
   end = clock();
   time_spent = (double)(end - begin) / CLOCKS_PER_SEC;
   printf("Total time = %f ms\n", time_spent * 1000);
-  printf("Time per query = %f ms\n", (time_spent * 1000)/NUM_TOPICS);
-  printf("Throughput: %f qps\n", NUM_TOPICS/time_spent);
+  printf("Time per query = %f ms\n", (time_spent * 1000)/num_topics);
+  printf("Throughput: %f qps\n", num_topics/time_spent);
 }
