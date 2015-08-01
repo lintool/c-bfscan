@@ -173,6 +173,11 @@
 
   <dependencies>
     <dependency>
+      <groupId>edu.umd</groupId>
+      <artifactId>cloud9</artifactId>
+      <version>1.4.17</version>
+    </dependency>
+    <dependency>
       <groupId>org.apache.lucene</groupId>
       <artifactId>lucene-core</artifactId>
       <version>4.3.1</version>
