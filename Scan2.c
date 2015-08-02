@@ -35,7 +35,41 @@ int main(int argc, const char* argv[]) {
     int* min_val;
 
     base = 0;
-    if ( topics[n][1] == 2 ) {
+    if ( topics[n][1] == 1 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        for (j=0; j<doclengths_ordered[i]; j++) {
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+        }
+
+        if (score > 0) {
+          int size = heap_size(&h);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
+          } else {
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
+
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
+            }
+          }
+        }
+
+        base += doclengths_ordered[i];
+      }
+
+    } else if ( topics[n][1] == 2 ) {
       for (i=0; i<num_docs; i++) {
         if (tweetids[i] > topics_time[n]) {
           base += doclengths_ordered[i];
@@ -231,6 +265,129 @@ int main(int argc, const char* argv[]) {
           if (collection_tf[base+j] == topics[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           if (collection_tf[base+j] == topics[n][7]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           if (collection_tf[base+j] == topics[n][8]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+        }
+
+        if (score > 0) {
+          int size = heap_size(&h);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
+          } else {
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
+
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
+            }
+          }
+        }
+
+        base += doclengths_ordered[i];
+      }
+    }  else if ( topics[n][1] == 8 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        for (j=0; j<doclengths_ordered[i]; j++) {
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][7]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][8]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][9]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+        }
+
+        if (score > 0) {
+          int size = heap_size(&h);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
+          } else {
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
+
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
+            }
+          }
+        }
+
+        base += doclengths_ordered[i];
+      }
+    } else if ( topics[n][1] == 9 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        for (j=0; j<doclengths_ordered[i]; j++) {
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][7]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][8]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][9]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][10]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+        }
+
+        if (score > 0) {
+          int size = heap_size(&h);
+
+          if ( size < TOP_K ) {
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(&h, scorez, docid);
+          } else {
+            heap_min(&h, (void**)&min_key, (void**)&min_val);
+
+            if (score > *min_key) {
+              heap_delmin(&h, (void**)&min_key, (void**)&min_val);
+
+              int *docid = malloc(sizeof(int)); *docid = i;
+              float *scorez = malloc(sizeof(float)); *scorez = score;
+              heap_insert(&h, scorez, docid);
+            }
+          }
+        }
+
+        base += doclengths_ordered[i];
+      }
+    } else if ( topics[n][1] == 10 ) {
+      for (i=0; i<num_docs; i++) {
+        if (tweetids[i] > topics_time[n]) {
+          base += doclengths_ordered[i];
+          continue;
+        }
+        score = 0;
+        for (j=0; j<doclengths_ordered[i]; j++) {
+          if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][3]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][4]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][5]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][6]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][7]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][8]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][9]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][10]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          if (collection_tf[base+j] == topics[n][11]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
 
         if (score > 0) {
