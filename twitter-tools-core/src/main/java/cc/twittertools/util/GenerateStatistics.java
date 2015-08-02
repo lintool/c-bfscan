@@ -1,9 +1,13 @@
 package cc.twittertools.util;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
 import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.util.List;
@@ -96,8 +100,10 @@ public class GenerateStatistics {
 		BufferedWriter bw_length_ordered = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath + "/doc_length_ordered.txt"))); 
 		BufferedWriter bw_cf = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath + "/cf_table.txt")));
 		BufferedWriter bw_stats = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath + "/stats.txt")));
+		BufferedWriter bw_termindexes = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath + "/termindexes.h")));
+		BufferedWriter bw_termindexes_padding = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath + "/termindexes_padding.h")));
 
-		for (int id = 0; id < termStats.getId2Term().size(); id ++) {
+		for (int id = 1; id <= termStats.getId2Term().size(); id ++) {
 			bw_cf.write(String.valueOf(termStats.getFreq(id)));
 			bw_cf.newLine();
 		}
@@ -107,6 +113,7 @@ public class GenerateStatistics {
 		int collection_unique_term_size = 0;
 		int collection_all_term_size = 0;
 		Status status;
+		LOG.info("Start storing stats...");
 		while ((status = stream.next()) != null) {
 			if (status.getText() == null) {
 				continue;
@@ -152,8 +159,7 @@ public class GenerateStatistics {
 			}
 		}
 		LOG.info("Total " + cnt + " processed");
-
-		stream.close();
+		
 		bw_id.close();
 		bw_length.close();
 		bw_term_ordered.close();
@@ -161,13 +167,70 @@ public class GenerateStatistics {
 		bw_length_ordered.close();
 		bw_stats.write(String.valueOf(cnt));
 		bw_stats.newLine();
-		bw_stats.write(collection_unique_term_size);
+		bw_stats.write(String.valueOf(collection_unique_term_size));
 		bw_stats.newLine();
-		bw_stats.write(collection_all_term_size);
+		bw_stats.write(String.valueOf(collection_all_term_size));
 		bw_stats.newLine();
-		bw_stats.write(termStats.getId2Term().size());
+		bw_stats.write(String.valueOf(termStats.getId2Term().size()));
 		bw_stats.newLine();
 		bw_stats.close();
+		stream.close();
+		
+		LOG.info("Start preprocessing for storing termindexes...");
+		int[] termindexes = new int[cnt + 1];
+		int[] termindexes_padding = new int[cnt + 1];
+		cnt = 0;
+		try {
+			FileInputStream fisDocLengthOrdered = new FileInputStream(outputPath + "/doc_length_ordered.txt");
+			BufferedReader brDocLengthOrdered = new BufferedReader(new InputStreamReader(fisDocLengthOrdered));
+			String line;
+			while((line = brDocLengthOrdered.readLine()) != null) {
+				int length = Integer.valueOf(line);
+				termindexes[cnt + 1] = termindexes[cnt] + length;
+				termindexes_padding[cnt + 1] = termindexes_padding[cnt] + length + (8 - length % 8);
+				cnt ++;
+				if (cnt % 100000 == 0) {
+					LOG.info(cnt + " processed");
+				}
+			}
+			try {
+				fisDocLengthOrdered.close();
+				brDocLengthOrdered.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e1) {
+			e1.printStackTrace();
+		}
+		
+		LOG.info("Total " + cnt + " processed");
+		
+		LOG.info("Start storing termindexes...");
+		bw_termindexes.write("int *termindexes[] = {");
+		bw_termindexes.newLine();
+		bw_termindexes_padding.write("int *termindexes[] = {");
+		bw_termindexes_padding.newLine();
+		for (int thread = 1; thread <= 48; thread ++) {
+			bw_termindexes.write("(int []) {");
+			bw_termindexes_padding.write("(int []) {");
+			for (int part = 0; part < thread; part ++) {
+				bw_termindexes.write(String.valueOf(termindexes[(int)(Math.ceil(cnt * 1.0 / thread) * part)]) + ", ");
+				bw_termindexes_padding.write(String.valueOf(termindexes_padding[(int)(Math.ceil(cnt * 1.0 / thread) * part)]) + ", ");
+			}
+			bw_termindexes.write("},");
+			bw_termindexes.newLine();
+			bw_termindexes_padding.write("},");
+			bw_termindexes_padding.newLine();
+		}
+		bw_termindexes.write("};");
+		bw_termindexes.newLine();
+		bw_termindexes_padding.write("};");
+		bw_termindexes_padding.newLine();
+		bw_termindexes.close();
+		bw_termindexes_padding.close();
+		LOG.info("Done...");
 	}
 
 	public static List<String> parse(Analyzer analyzer, String s) throws IOException {

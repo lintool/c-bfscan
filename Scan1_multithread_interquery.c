@@ -4,9 +4,10 @@
 #include <sys/time.h>
 #include <string.h>
 
-#include "heap.h"
-#include "constants.h"
-#include "threadpool.h"
+#include "include/constants.h"
+#include "include/data.c"
+#include "include/heap.c"
+#include "include/threadpool.c"
 
 extern void init_tf(char * data_path);
 int num_docs;

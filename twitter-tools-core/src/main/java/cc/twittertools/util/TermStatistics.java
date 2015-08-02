@@ -28,7 +28,7 @@ public class TermStatistics {
 		Terms terms = SlowCompositeReaderWrapper.wrap(reader).terms(StatusField.TEXT.name);
 		TermsEnum termsEnum = terms.iterator(TermsEnum.EMPTY);
 
-		int termCnt = 0;
+		int termCnt = 1;
 		BytesRef bytes = new BytesRef();
 		while ( (bytes = termsEnum.next()) != null) {
 			byte[] buf = new byte[bytes.length];

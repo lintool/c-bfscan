@@ -111,6 +111,13 @@
               <mainClass>cc.twittertools.util.GenerateStatistics</mainClass>
               <name>GenerateStatistics</name>
               <jvmSettings>
+                <maxMemorySize>16g</maxMemorySize>
+              </jvmSettings>
+            </program>
+            <program>
+              <mainClass>cc.twittertools.util.FormatQuery</mainClass>
+              <name>FormatQuery</name>
+              <jvmSettings>
                 <maxMemorySize>4g</maxMemorySize>
               </jvmSettings>
             </program>
@@ -118,7 +125,7 @@
               <mainClass>cc.twittertools.util.GenerateQuery</mainClass>
               <name>GenerateQuery</name>
               <jvmSettings>
-                <maxMemorySize>4g</maxMemorySize>
+                <maxMemorySize>16g</maxMemorySize>
               </jvmSettings>
             </program>
             <program>

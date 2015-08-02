@@ -4,15 +4,11 @@
 #include <sys/time.h>
 #include <string.h>
 
-#include "heap.h"
-#include "termindexes_padding.h"
-#include "topics2011.h"
-#include "topics2011_time.h"
-// #include "topics_1000.h"
-// #include "topics_1000_time.h"
-#include "constants.h"
-#include "threadpool.h"
 #include "immintrin.h"
+#include "include/constants.h"
+#include "include/data.c"
+#include "include/heap.c"
+#include "include/threadpool.c"
 
 struct arg_struct {
     int topic;
@@ -22,10 +18,11 @@ struct arg_struct {
     heap* h;
 };
 
-extern void init_tf();
-
+extern void init_tf(char * data_path);
+int num_docs;
+int total_terms;
+int num_topics;
 int search(struct arg_struct *arg) {
-  // printf("# Thread working: %u\n", (int)pthread_self());
   int n = arg->topic;
   int start = arg->startidx;
   int end = arg->endidx;
@@ -44,11 +41,11 @@ int search(struct arg_struct *arg) {
   int* min_val;
   float score_array[8];
 
-  if ( topics2011[n][1] == 1 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
+  if ( topics[n][1] == 1 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
 
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -58,14 +55,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -98,12 +95,12 @@ int search(struct arg_struct *arg) {
 
       base += doclengths_ordered_padding[i];
     }
-  } else if ( topics2011[n][1] == 2 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
+  } else if ( topics[n][1] == 2 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
 
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -113,14 +110,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -132,14 +129,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -173,12 +170,12 @@ int search(struct arg_struct *arg) {
       base += doclengths_ordered_padding[i];
     }
 
-  } else if ( topics2011[n][1] == 3 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
-    __m256i query_vec_3 = _mm256_set1_epi32(topics2011[n][4]);
+  } else if ( topics[n][1] == 3 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
+    __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -188,14 +185,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -207,14 +204,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -226,14 +223,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_3);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -266,13 +263,13 @@ int search(struct arg_struct *arg) {
 
       base += doclengths_ordered_padding[i];
     }
-  } else if ( topics2011[n][1] == 4 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
-    __m256i query_vec_3 = _mm256_set1_epi32(topics2011[n][4]);
-    __m256i query_vec_4 = _mm256_set1_epi32(topics2011[n][5]);
+  } else if ( topics[n][1] == 4 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
+    __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
+    __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -282,14 +279,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -301,14 +298,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -320,14 +317,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_3);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -339,14 +336,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_4);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -379,14 +376,14 @@ int search(struct arg_struct *arg) {
 
       base += doclengths_ordered_padding[i];
     }
-  } else if ( topics2011[n][1] == 5 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
-    __m256i query_vec_3 = _mm256_set1_epi32(topics2011[n][4]);
-    __m256i query_vec_4 = _mm256_set1_epi32(topics2011[n][5]);
-    __m256i query_vec_5 = _mm256_set1_epi32(topics2011[n][6]);
+  } else if ( topics[n][1] == 5 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
+    __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
+    __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
+    __m256i query_vec_5 = _mm256_set1_epi32(topics[n][6]);
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -397,14 +394,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -416,14 +413,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -435,14 +432,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_3);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -454,14 +451,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_4);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -473,14 +470,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_5);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -513,15 +510,15 @@ int search(struct arg_struct *arg) {
 
       base += doclengths_ordered_padding[i];
     }
-  } else if ( topics2011[n][1] == 6 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
-    __m256i query_vec_3 = _mm256_set1_epi32(topics2011[n][4]);
-    __m256i query_vec_4 = _mm256_set1_epi32(topics2011[n][5]);
-    __m256i query_vec_5 = _mm256_set1_epi32(topics2011[n][6]);
-    __m256i query_vec_6 = _mm256_set1_epi32(topics2011[n][7]);
+  } else if ( topics[n][1] == 6 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
+    __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
+    __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
+    __m256i query_vec_5 = _mm256_set1_epi32(topics[n][6]);
+    __m256i query_vec_6 = _mm256_set1_epi32(topics[n][7]);
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -531,14 +528,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -550,14 +547,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -570,14 +567,14 @@ int search(struct arg_struct *arg) {
         if (_mm256_movemask_epi8(mask) != 0) {
 
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -589,14 +586,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_4);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -609,14 +606,14 @@ int search(struct arg_struct *arg) {
         if (_mm256_movemask_epi8(mask) != 0) {
 
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -628,14 +625,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_6);
         if (_mm256_movemask_epi8(mask) != 0) {         
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -668,16 +665,16 @@ int search(struct arg_struct *arg) {
 
       base += doclengths_ordered_padding[i];
     }
-  } else if ( topics2011[n][1] == 7 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
-    __m256i query_vec_3 = _mm256_set1_epi32(topics2011[n][4]);
-    __m256i query_vec_4 = _mm256_set1_epi32(topics2011[n][5]);
-    __m256i query_vec_5 = _mm256_set1_epi32(topics2011[n][6]);
-    __m256i query_vec_6 = _mm256_set1_epi32(topics2011[n][7]);
-    __m256i query_vec_7 = _mm256_set1_epi32(topics2011[n][8]);
+  } else if ( topics[n][1] == 7 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
+    __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
+    __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
+    __m256i query_vec_5 = _mm256_set1_epi32(topics[n][6]);
+    __m256i query_vec_6 = _mm256_set1_epi32(topics[n][7]);
+    __m256i query_vec_7 = _mm256_set1_epi32(topics[n][8]);
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -687,14 +684,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -706,14 +703,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -725,14 +722,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_3);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -745,14 +742,14 @@ int search(struct arg_struct *arg) {
         if (_mm256_movemask_epi8(mask) != 0) {
 
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -764,14 +761,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_5);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -783,14 +780,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_6);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -802,14 +799,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_7);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -842,17 +839,17 @@ int search(struct arg_struct *arg) {
 
       base += doclengths_ordered_padding[i];
     }
-  } else if ( topics2011[n][1] == 8 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
-    __m256i query_vec_3 = _mm256_set1_epi32(topics2011[n][4]);
-    __m256i query_vec_4 = _mm256_set1_epi32(topics2011[n][5]);
-    __m256i query_vec_5 = _mm256_set1_epi32(topics2011[n][6]);
-    __m256i query_vec_6 = _mm256_set1_epi32(topics2011[n][7]);
-    __m256i query_vec_7 = _mm256_set1_epi32(topics2011[n][8]);
-    __m256i query_vec_8 = _mm256_set1_epi32(topics2011[n][9]);
+  } else if ( topics[n][1] == 8 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
+    __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
+    __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
+    __m256i query_vec_5 = _mm256_set1_epi32(topics[n][6]);
+    __m256i query_vec_6 = _mm256_set1_epi32(topics[n][7]);
+    __m256i query_vec_7 = _mm256_set1_epi32(topics[n][8]);
+    __m256i query_vec_8 = _mm256_set1_epi32(topics[n][9]);
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -862,14 +859,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -881,14 +878,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -900,14 +897,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_3);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -919,14 +916,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_4);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -938,14 +935,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_5);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -957,14 +954,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_6);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -976,208 +973,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_7);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
-          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
-          t1 = _mm256_hadd_ps(score_vec,score_vec);
-          t2 = _mm256_hadd_ps(t1,t1);
-          t3 = _mm256_extractf128_ps(t2,1);
-          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-          score += _mm_cvtss_f32(t4);
-        }  
-        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_8);
-        if (_mm256_movemask_epi8(mask) != 0) {
-          memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
-          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
-          t1 = _mm256_hadd_ps(score_vec,score_vec);
-          t2 = _mm256_hadd_ps(t1,t1);
-          t3 = _mm256_extractf128_ps(t2,1);
-          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-          score += _mm_cvtss_f32(t4);
-        } 
-      }
-
-      if (score > 0) {
-        int size = heap_size(h);
-
-        if ( size < TOP_K ) {
-          int *docid = malloc(sizeof(int)); *docid = i;
-          float *scorez = malloc(sizeof(float)); *scorez = score;
-          heap_insert(h, scorez, docid);
-        } else {
-          heap_min(h, (void**)&min_key, (void**)&min_val);
-
-          if (score > *min_key) {
-            heap_delmin(h, (void**)&min_key, (void**)&min_val);
-
-            int *docid = malloc(sizeof(int)); *docid = i;
-            float *scorez = malloc(sizeof(float)); *scorez = score;
-            heap_insert(h, scorez, docid);
-          }
-        }
-      }
-
-      base += doclengths_ordered_padding[i];
-    }
-  } else if ( topics2011[n][1] == 9 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
-    __m256i query_vec_3 = _mm256_set1_epi32(topics2011[n][4]);
-    __m256i query_vec_4 = _mm256_set1_epi32(topics2011[n][5]);
-    __m256i query_vec_5 = _mm256_set1_epi32(topics2011[n][6]);
-    __m256i query_vec_6 = _mm256_set1_epi32(topics2011[n][7]);
-    __m256i query_vec_7 = _mm256_set1_epi32(topics2011[n][8]);
-    __m256i query_vec_8 = _mm256_set1_epi32(topics2011[n][9]);
-    __m256i query_vec_9 = _mm256_set1_epi32(topics2011[n][10]);
-    for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
-      score = 0;
-      for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
-        collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
-        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
-        if (_mm256_movemask_epi8(mask) != 0) {
-          memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
-          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
-          t1 = _mm256_hadd_ps(score_vec,score_vec);
-          t2 = _mm256_hadd_ps(t1,t1);
-          t3 = _mm256_extractf128_ps(t2,1);
-          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-          score += _mm_cvtss_f32(t4);
-        }
-        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
-        if (_mm256_movemask_epi8(mask) != 0) {
-          memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
-          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
-          t1 = _mm256_hadd_ps(score_vec,score_vec);
-          t2 = _mm256_hadd_ps(t1,t1);
-          t3 = _mm256_extractf128_ps(t2,1);
-          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-          score += _mm_cvtss_f32(t4);
-        } 
-        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_3);
-        if (_mm256_movemask_epi8(mask) != 0) {
-          memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
-          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
-          t1 = _mm256_hadd_ps(score_vec,score_vec);
-          t2 = _mm256_hadd_ps(t1,t1);
-          t3 = _mm256_extractf128_ps(t2,1);
-          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-          score += _mm_cvtss_f32(t4);
-        } 
-        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_4);
-        if (_mm256_movemask_epi8(mask) != 0) {
-          memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
-          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
-          t1 = _mm256_hadd_ps(score_vec,score_vec);
-          t2 = _mm256_hadd_ps(t1,t1);
-          t3 = _mm256_extractf128_ps(t2,1);
-          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-          score += _mm_cvtss_f32(t4);
-        } 
-        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_5);
-        if (_mm256_movemask_epi8(mask) != 0) {
-          memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
-          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
-          t1 = _mm256_hadd_ps(score_vec,score_vec);
-          t2 = _mm256_hadd_ps(t1,t1);
-          t3 = _mm256_extractf128_ps(t2,1);
-          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-          score += _mm_cvtss_f32(t4);
-        } 
-        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_6);
-        if (_mm256_movemask_epi8(mask) != 0) {
-          memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
-          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
-          t1 = _mm256_hadd_ps(score_vec,score_vec);
-          t2 = _mm256_hadd_ps(t1,t1);
-          t3 = _mm256_extractf128_ps(t2,1);
-          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
-          score += _mm_cvtss_f32(t4);
-        } 
-        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_7);
-        if (_mm256_movemask_epi8(mask) != 0) {
-          memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1189,14 +992,208 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_8);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
+          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
+          t1 = _mm256_hadd_ps(score_vec,score_vec);
+          t2 = _mm256_hadd_ps(t1,t1);
+          t3 = _mm256_extractf128_ps(t2,1);
+          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
+          score += _mm_cvtss_f32(t4);
+        } 
+      }
+
+      if (score > 0) {
+        int size = heap_size(h);
+
+        if ( size < TOP_K ) {
+          int *docid = malloc(sizeof(int)); *docid = i;
+          float *scorez = malloc(sizeof(float)); *scorez = score;
+          heap_insert(h, scorez, docid);
+        } else {
+          heap_min(h, (void**)&min_key, (void**)&min_val);
+
+          if (score > *min_key) {
+            heap_delmin(h, (void**)&min_key, (void**)&min_val);
+
+            int *docid = malloc(sizeof(int)); *docid = i;
+            float *scorez = malloc(sizeof(float)); *scorez = score;
+            heap_insert(h, scorez, docid);
+          }
+        }
+      }
+
+      base += doclengths_ordered_padding[i];
+    }
+  } else if ( topics[n][1] == 9 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
+    __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
+    __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
+    __m256i query_vec_5 = _mm256_set1_epi32(topics[n][6]);
+    __m256i query_vec_6 = _mm256_set1_epi32(topics[n][7]);
+    __m256i query_vec_7 = _mm256_set1_epi32(topics[n][8]);
+    __m256i query_vec_8 = _mm256_set1_epi32(topics[n][9]);
+    __m256i query_vec_9 = _mm256_set1_epi32(topics[n][10]);
+    for (i=start; i<end; i++) {
+      if (tweetids[i] > topics_time[n]) {
+        base += doclengths_ordered_padding[i];
+        continue;
+      }
+      score = 0;
+      for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
+        collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
+        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
+        if (_mm256_movemask_epi8(mask) != 0) {
+          memset(score_array, 0.0, sizeof(score_array));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
+          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
+          t1 = _mm256_hadd_ps(score_vec,score_vec);
+          t2 = _mm256_hadd_ps(t1,t1);
+          t3 = _mm256_extractf128_ps(t2,1);
+          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
+          score += _mm_cvtss_f32(t4);
+        }
+        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
+        if (_mm256_movemask_epi8(mask) != 0) {
+          memset(score_array, 0.0, sizeof(score_array));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
+          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
+          t1 = _mm256_hadd_ps(score_vec,score_vec);
+          t2 = _mm256_hadd_ps(t1,t1);
+          t3 = _mm256_extractf128_ps(t2,1);
+          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
+          score += _mm_cvtss_f32(t4);
+        } 
+        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_3);
+        if (_mm256_movemask_epi8(mask) != 0) {
+          memset(score_array, 0.0, sizeof(score_array));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
+          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
+          t1 = _mm256_hadd_ps(score_vec,score_vec);
+          t2 = _mm256_hadd_ps(t1,t1);
+          t3 = _mm256_extractf128_ps(t2,1);
+          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
+          score += _mm_cvtss_f32(t4);
+        } 
+        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_4);
+        if (_mm256_movemask_epi8(mask) != 0) {
+          memset(score_array, 0.0, sizeof(score_array));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
+          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
+          t1 = _mm256_hadd_ps(score_vec,score_vec);
+          t2 = _mm256_hadd_ps(t1,t1);
+          t3 = _mm256_extractf128_ps(t2,1);
+          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
+          score += _mm_cvtss_f32(t4);
+        } 
+        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_5);
+        if (_mm256_movemask_epi8(mask) != 0) {
+          memset(score_array, 0.0, sizeof(score_array));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
+          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
+          t1 = _mm256_hadd_ps(score_vec,score_vec);
+          t2 = _mm256_hadd_ps(t1,t1);
+          t3 = _mm256_extractf128_ps(t2,1);
+          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
+          score += _mm_cvtss_f32(t4);
+        } 
+        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_6);
+        if (_mm256_movemask_epi8(mask) != 0) {
+          memset(score_array, 0.0, sizeof(score_array));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
+          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
+          t1 = _mm256_hadd_ps(score_vec,score_vec);
+          t2 = _mm256_hadd_ps(t1,t1);
+          t3 = _mm256_extractf128_ps(t2,1);
+          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
+          score += _mm_cvtss_f32(t4);
+        } 
+        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_7);
+        if (_mm256_movemask_epi8(mask) != 0) {
+          memset(score_array, 0.0, sizeof(score_array));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
+          score_vec = _mm256_and_ps(score_vec, (__m256)mask);
+          t1 = _mm256_hadd_ps(score_vec,score_vec);
+          t2 = _mm256_hadd_ps(t1,t1);
+          t3 = _mm256_extractf128_ps(t2,1);
+          t4 = _mm_add_ss(_mm256_castps256_ps128(t2),t3);
+          score += _mm_cvtss_f32(t4);
+        }  
+        mask = _mm256_cmpeq_epi32(collect_vec, query_vec_8);
+        if (_mm256_movemask_epi8(mask) != 0) {
+          memset(score_array, 0.0, sizeof(score_array));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1208,14 +1205,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_9);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1248,19 +1245,19 @@ int search(struct arg_struct *arg) {
 
       base += doclengths_ordered_padding[i];
     }
-  } else if ( topics2011[n][1] == 10 ) {
-    __m256i query_vec_1 = _mm256_set1_epi32(topics2011[n][2]);
-    __m256i query_vec_2 = _mm256_set1_epi32(topics2011[n][3]);
-    __m256i query_vec_3 = _mm256_set1_epi32(topics2011[n][4]);
-    __m256i query_vec_4 = _mm256_set1_epi32(topics2011[n][5]);
-    __m256i query_vec_5 = _mm256_set1_epi32(topics2011[n][6]);
-    __m256i query_vec_6 = _mm256_set1_epi32(topics2011[n][7]);
-    __m256i query_vec_7 = _mm256_set1_epi32(topics2011[n][8]);
-    __m256i query_vec_8 = _mm256_set1_epi32(topics2011[n][9]);
-    __m256i query_vec_9 = _mm256_set1_epi32(topics2011[n][10]);
-    __m256i query_vec_10 = _mm256_set1_epi32(topics2011[n][11]);
+  } else if ( topics[n][1] == 10 ) {
+    __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
+    __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
+    __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
+    __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
+    __m256i query_vec_5 = _mm256_set1_epi32(topics[n][6]);
+    __m256i query_vec_6 = _mm256_set1_epi32(topics[n][7]);
+    __m256i query_vec_7 = _mm256_set1_epi32(topics[n][8]);
+    __m256i query_vec_8 = _mm256_set1_epi32(topics[n][9]);
+    __m256i query_vec_9 = _mm256_set1_epi32(topics[n][10]);
+    __m256i query_vec_10 = _mm256_set1_epi32(topics[n][11]);
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
@@ -1270,14 +1267,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][2]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1289,14 +1286,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_2);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][3]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][3]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1308,14 +1305,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_3);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][4]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][4]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1327,14 +1324,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_4);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][5]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][5]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1346,14 +1343,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_5);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][6]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][6]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1365,14 +1362,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_6);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][7]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][7]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1384,14 +1381,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_7);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][8]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][8]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1403,14 +1400,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_8);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][9]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][9]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1422,14 +1419,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_9);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][10]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][10]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1441,14 +1438,14 @@ int search(struct arg_struct *arg) {
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_10);
         if (_mm256_movemask_epi8(mask) != 0) {
           memset(score_array, 0.0, sizeof(score_array));
-          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][11]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics2011[n][11]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics2011[n][11]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics2011[n][11]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics2011[n][11]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics2011[n][11]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics2011[n][11]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
-          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics2011[n][11]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[0] = log(1 + tf_padding[base+j]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[1] = log(1 + tf_padding[base+j+1]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[2] = log(1 + tf_padding[base+j+2]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[3] = log(1 + tf_padding[base+j+3]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[4] = log(1 + tf_padding[base+j+4]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[5] = log(1 + tf_padding[base+j+5]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[6] = log(1 + tf_padding[base+j+6]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+          score_array[7] = log(1 + tf_padding[base+j+7]/(MU * (cf[topics[n][11]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           score_vec = _mm256_load_ps((__m256 *)&score_array[0]);
           score_vec = _mm256_and_ps(score_vec, (__m256)mask);
           t1 = _mm256_hadd_ps(score_vec,score_vec);
@@ -1483,15 +1480,15 @@ int search(struct arg_struct *arg) {
     }
   } else {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics2011_time[n]) {
+      if (tweetids[i] > topics_time[n]) {
         base += doclengths_ordered_padding[i];
         continue;
       }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j++) {
-        for (t=2; t<2+topics2011[n][1]; t++) {
-          if ( collection_tf_padding[base+j] == topics2011[n][t]) {
-            score+=log(1 + tf_padding[base+j]/(MU * (cf[topics2011[n][t]] + 1) / (TOTAL_TERMS + 1))) + log(MU / (doclengths[i] + MU));
+        for (t=2; t<2+topics[n][1]; t++) {
+          if ( collection_tf_padding[base+j] == topics[n][t]) {
+            score+=log(1 + tf_padding[base+j]/(MU * (cf[topics[n][t]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
           }
         }
       }
@@ -1523,13 +1520,13 @@ int search(struct arg_struct *arg) {
 }
 
 int main(int argc, const char* argv[]) {
-  if (argc <= 1) {
-    printf("PLEASE ENTER THREAD NUMBER!\n");
+  if (argc <= 2) {
+    printf("PLEASE ENTER DATA PATH AND THREAD NUMBER!\n");
     return 0;
   }
-  int nthreads=atoi(argv[1]);
+  int nthreads=atoi(argv[2]);
   printf("Number of threads: %d\n", nthreads);
-  init_tf();
+  init_tf(argv[1]);
   double total = 0;
   int N = 3;
   int count;
@@ -1539,8 +1536,7 @@ int main(int argc, const char* argv[]) {
     
     gettimeofday(&begin, NULL);
     int n;
-    for (n=0; n<NUM_TOPICS; n++) {
-      // printf("Processing topic %d...\n", topics2011[n][0]);
+    for (n=0; n<num_topics; n++) {
       heap h_array[nthreads];
       memset(h_array,0,sizeof(h_array));
       struct threadpool *pool;
@@ -1549,11 +1545,11 @@ int main(int argc, const char* argv[]) {
       for (i=0; i<nthreads; i++) {
         struct arg_struct *args = malloc(sizeof *args);
         args->topic = n;
-        args->startidx = i*(int)(ceil((double)NUM_DOCS / nthreads));
-        if ((i+1)*(int)(ceil((double)NUM_DOCS / nthreads)) > NUM_DOCS) {
-          args->endidx = NUM_DOCS;
+        args->startidx = i*(int)(ceil((double)num_docs / nthreads));
+        if ((i+1)*(int)(ceil((double)num_docs / nthreads)) > num_docs) {
+          args->endidx = num_docs;
         } else {
-          args->endidx = (i+1)*(int)(ceil((double)NUM_DOCS / nthreads));
+          args->endidx = (i+1)*(int)(ceil((double)num_docs / nthreads));
         }
         args->base = termindexes[nthreads-1][i];
         heap h;
@@ -1598,5 +1594,5 @@ int main(int argc, const char* argv[]) {
     total = total + time_spent / 1000.0;
   }
   printf("Total time = %f ms\n", total/N);
-  printf("Time per query = %f ms\n", (total/N)/NUM_TOPICS);
+  printf("Time per query = %f ms\n", (total/N)/num_topics);
 }
