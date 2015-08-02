@@ -10,7 +10,6 @@ int num_docs;
 int total_terms;
 int num_topics;
 void init_tf(char *data_path) {
-  num_topics = 49;
   FILE *fp;
   char *line = NULL;
   size_t len = 0;
