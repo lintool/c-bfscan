@@ -8,7 +8,7 @@
 
 int num_docs;
 int total_terms;
-int num_topics;
+int num_topics = sizeof(topics_time) / sizeof(topics_time[0]);
 void init_tf(char *data_path) {
   FILE *fp;
   char *line = NULL;
