@@ -35,7 +35,7 @@ $ sh target/appassembler/bin/IndexStatuses -collection {collectionPath} -index {
 $ sh target/appassembler/bin/GenerateStatistics -collection {collectionPath} -index {indexPath} -output {dataPath}
 ```
 
-5.To Format the efficiency topics (here we provide an efficiency file in /data/ folder) to TREC query format and get the top N topics:
+5.To format the efficiency topics (here we provide an efficiency file in /data/ folder) to TREC query format and get the top N topics:
 
 ```
 $ sh target/appassembler/bin/FormatQuery -input ../data/05.efficiency_topics -top {N} -output {queryPath}
