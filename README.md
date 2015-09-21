@@ -10,49 +10,49 @@ The multithreading versions are just the files that have the term "multithread" 
 
 Getting Started
 --------------
-You can clone the repo with the following command:
+1. You can clone the repo with the following command:
 
 ```
 $ git clone git://github.com/lintool/c-bfscan.git
 ``` 
 
-Once you've cloned the repository, change directory into `twitter-tools-core` and build the package with Maven:
+2. Once you've cloned the repository, change directory into `twitter-tools-core` and build the package with Maven:
 
 ```
 $ cd c-bfscan/twitter-tools-core
 $ mvn clean package appassembler:assemble
 ```
 
-Build the index on the data collection:
+3. Build the index on the data collection:
 
 ```
 $ sh target/appassembler/bin/IndexStatuses -collection {collectionPath} -index {indexPath}
 ```
 
-Generate document pool, where the dataPath is the path that stores the document pool.
+4. Generate document pool, where the dataPath is the path that stores the document pool.
 
 ```
 $ sh target/appassembler/bin/GenerateStatistics -collection {collectionPath} -index {indexPath} -output {dataPath}
 ```
 
-To Format the efficiency topics (here we provide an efficiency file in /data/ folder) to TREC query format and get the top N topics:
+5. To Format the efficiency topics (here we provide an efficiency file in /data/ folder) to TREC query format and get the top N topics:
 
 ```
 $ sh target/appassembler/bin/FormatQuery -input ../data/05.efficiency_topics -top {N} -output {queryPath}
 ```
-Convert TREC query to the query that can be fed to c-bfscan, note that outputFile is the new format of the query and needs to be a .h file:
+6. Convert TREC query to the query that can be fed to c-bfscan, note that outputFile is the new format of the query and needs to be a .h file:
 
 ```
 $ sh target/appassembler/bin/GenerateQuery -index {indexPath} -query {queryPath} -output {outputPath/newQuery.h}
 ```
 
-Go back to the main repository:
+7. Go back to the main repository:
 
 ```
 $ cd ..
 ```
 
-To run different systems:
+8. To run different systems:
 
 Scan1:
 
