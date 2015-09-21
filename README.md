@@ -35,7 +35,7 @@ Generate document pool, where the dataPath is the path that stores the document 
 $ sh target/appassembler/bin/GenerateStatistics -collection {collectionPath} -index {indexPath} -output {dataPath}
 ```
 
-To Format the efficiency topics (here we provide a efficiency file in /data/ folder) to TREC query format and get the topic N topics:
+To Format the efficiency topics (here we provide an efficiency file in /data/ folder) to TREC query format and get the top N topics:
 
 ```
 $ sh target/appassembler/bin/FormatQuery -input ../data/05.efficiency_topics -top {N} -output {queryPath}
