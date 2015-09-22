@@ -43,7 +43,7 @@ $ sh target/appassembler/bin/FormatQuery -input ../data/05.efficiency_topics -to
 6.Convert TREC query to the query that can be fed to c-bfscan, note that outputFile is the new format of the query and needs to be a .h file:
 
 ```
-$ sh target/appassembler/bin/GenerateQuery -index {indexPath} -query {queryPath} -output {outputPath/newQuery.h}
+$ sh target/appassembler/bin/GenerateQuery -index {indexPath} -query {queryPath} -output {outpunewQuery.h}
 ```
 
 7.Go back to the main repository:
