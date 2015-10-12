@@ -149,8 +149,8 @@ void init_tf(char *data_path) {
   printf("Total of %d doclengths read\n\n", i);
   fclose(fp);
 
-  cf = malloc(num_terms * sizeof(uint32_t));  
-  i=0;
+  cf = malloc((num_terms + 1) * sizeof(uint32_t));  
+  i=1;
   char str7[strlen(data_path) + strlen("/cf_table.txt")];
   strcpy(str7, data_path);
   strcat(str7, "/cf_table.txt");
