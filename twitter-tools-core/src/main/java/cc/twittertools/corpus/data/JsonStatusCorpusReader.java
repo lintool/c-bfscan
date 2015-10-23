@@ -44,6 +44,7 @@ public class JsonStatusCorpusReader implements StatusStream {
         return path.getName().endsWith(".gz") ? true : false;
       }
     });
+    Arrays.sort(files);
 
     if (files.length == 0) {
       throw new IOException(file + " does not contain any .gz files!");
