@@ -26,7 +26,7 @@ Getting Started
 3. Build the index on the data collection:
 
 	```
-	$ sh target/appassembler/bin/IndexStatuses -collection {collectionPath} -index {indexPath}
+	$ sh target/appassembler/bin/IndexStatuses -collection {collectionPath} -index {indexPath} -optimize
 	```
 
 4. Generate document pool, where the dataPath is the path that stores the document pool.
