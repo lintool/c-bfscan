@@ -102,7 +102,6 @@ public class GenerateStatistics {
 		BufferedWriter bw_stats = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath + "/stats.txt")));
 		BufferedWriter bw_termindexes = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath + "/termindexes.h")));
 		BufferedWriter bw_termindexes_padding = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(outputPath + "/termindexes_padding.h")));
-
 		for (int id = 1; id <= termStats.getId2Term().size(); id ++) {
 			bw_cf.write(String.valueOf(termStats.getFreq(id)));
 			bw_cf.newLine();
@@ -187,7 +186,7 @@ public class GenerateStatistics {
 			while((line = brDocLengthOrdered.readLine()) != null) {
 				int length = Integer.valueOf(line);
 				termindexes[cnt + 1] = termindexes[cnt] + length;
-				termindexes_padding[cnt + 1] = termindexes_padding[cnt] + length + (8 - length % 8);
+				termindexes_padding[cnt + 1] = termindexes_padding[cnt] + length + (length == 0 ? 0: (8 - length % 8));
 				cnt ++;
 				if (cnt % 100000 == 0) {
 					LOG.info(cnt + " processed");
@@ -219,6 +218,7 @@ public class GenerateStatistics {
 				bw_termindexes.write(String.valueOf(termindexes[(int)(Math.ceil(cnt * 1.0 / thread) * part)]) + ", ");
 				bw_termindexes_padding.write(String.valueOf(termindexes_padding[(int)(Math.ceil(cnt * 1.0 / thread) * part)]) + ", ");
 			}
+			System.out.println();
 			bw_termindexes.write("},");
 			bw_termindexes.newLine();
 			bw_termindexes_padding.write("},");
