@@ -121,7 +121,7 @@ Getting Started
 	AVXScan1_multithread_intraquery:
 	
 	```
-	$ gcc -O3 -w -msse4.1 -mavx2 AVXScan1_multithread_intraquery.c -o AVXScan1_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes.h}
+	$ gcc -O3 -w -msse4.1 -mavx2 AVXScan1_multithread_intraquery.c -o AVXScan1_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes_padding.h}
 	$ ./AVXScan1_multithread_intraquery {dataPath} {numThreads}
 	```
 	
