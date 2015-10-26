@@ -11,6 +11,7 @@
 #include "include/threadpool.c"
 
 struct arg_struct {
+    int threadidx;
     int topic;
     int startidx;
     int endidx;
@@ -65,7 +66,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -224,7 +225,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -401,7 +402,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -598,7 +599,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -815,7 +816,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -1052,7 +1053,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -1309,7 +1310,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -1586,7 +1587,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -1883,7 +1884,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -2200,7 +2201,7 @@ int search(struct arg_struct *arg) {
       indexsum = len1 + len2 + len3 + len4 + len5 + len6;
       memset(scores, 0, sizeof(scores));
       for (j=0; j<indexsum; j+=8) {
-        pos = doc_pos[base+j];
+        pos = doc_pos[arg->threadidx][base+j-arg->base];
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
         mask = _mm256_cmpeq_epi32(collect_vec, query_vec_1);
         if (_mm256_movemask_epi8(mask) != 0) {
@@ -2598,6 +2599,32 @@ int main(int argc, const char* argv[]) {
   int nthreads=atoi(argv[2]);
   printf("Number of threads: %d\n", nthreads);
   init_tf(argv[1]);
+
+  int totalsize = sizeof(tf_padding) / sizeof(tf_padding[0]);
+  doc_pos = (uint8_t **)malloc(totalsize * sizeof(uint8_t*));
+  int i;
+  for (i=0; i<nthreads; i++) {
+    int start = i*(int)(ceil((double)num_docs / nthreads));
+    int end = num_docs;
+    if ((i+1)*(int)(ceil((double)num_docs / nthreads)) < num_docs) {
+      end = (i+1)*(int)(ceil((double)num_docs / nthreads));
+    }
+    int startidx = termindexes[nthreads - 1][i];
+    int endidx = i == nthreads-1 ? (totalsize + 1) : termindexes[nthreads - 1][i + 1];
+    doc_pos[i] = malloc((endidx - startidx) * sizeof(uint8_t));
+    int doc_cnt;
+    int term_pos;
+    int block_pos;
+    int base = 0;
+    for (doc_cnt = start; doc_cnt < end; doc_cnt ++) {
+      for (term_pos = 0; term_pos < doclengths_ordered_padding[doc_cnt]; term_pos ++) {
+        doc_pos[i][base + term_pos] = block_pos % DOCS_BLOCK_SIZE;
+      }
+      block_pos ++;
+      base += doclengths_ordered_padding[doc_cnt];
+    }
+  }
+
   double total = 0;
   int N = 3;
   int count;
@@ -2612,9 +2639,10 @@ int main(int argc, const char* argv[]) {
       memset(h_array,0,sizeof(h_array));
       struct threadpool *pool;
       pool = threadpool_init(nthreads);
-      int i = 0;
+      i = 0;
       for (i=0; i<nthreads; i++) {
         struct arg_struct *args = malloc(sizeof *args);
+        args->threadidx = i;
         args->topic = n;
         args->startidx = i*(int)(ceil((double)num_docs / nthreads));
         if ((i+1)*(int)(ceil((double)num_docs / nthreads)) > num_docs) {
