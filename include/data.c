@@ -96,7 +96,7 @@ void init_tf(char *data_path) {
 
   collection_tf_padding = malloc(sum * sizeof(uint32_t));
   tf_padding = malloc(sum * sizeof(uint32_t));
-  // doc_pos = malloc(sum * sizeof(uint8_t));
+  doc_pos = malloc(sum * sizeof(uint8_t));
   int base = 0;
   int i_padding = 0;
   int ii=0;
@@ -106,13 +106,13 @@ void init_tf(char *data_path) {
     for (jj = 0; jj < doclengths_ordered[ii]; jj ++) {
       collection_tf_padding[i_padding] = collection_tf[base + jj];
       tf_padding[i_padding] = tf[base + jj];
-      // doc_pos[i_padding] = pos % DOCS_BLOCK_SIZE;
+      doc_pos[i_padding] = pos % DOCS_BLOCK_SIZE;
       i_padding++;
     }
     for (jj = doclengths_ordered[ii]; jj < doclengths_ordered_padding[ii]; jj ++) {
       collection_tf_padding[i_padding] = 0;
       tf_padding[i_padding] = 0;
-      // doc_pos[i_padding] = pos % DOCS_BLOCK_SIZE;
+      doc_pos[i_padding] = pos % DOCS_BLOCK_SIZE;
       i_padding++;
     }
     pos ++;
