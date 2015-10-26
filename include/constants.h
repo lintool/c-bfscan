@@ -20,4 +20,4 @@ uint64_t * tweetids;
 uint32_t * cf;
 uint32_t * base;
 uint32_t * base_padding;
-uint8_t ** doc_pos;
+uint8_t * doc_pos;
