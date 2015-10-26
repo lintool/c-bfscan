@@ -57,14 +57,14 @@ Getting Started
 	Scan1:
 	
 	```
-	$ gcc -O3 -w Scan1.c -o Scan1 -include {newQuery.h}
+	$ gcc -O3 -w -lm Scan1.c -o Scan1 -include {newQuery.h}
 	$ ./Scan1 {dataPath}
 	```
 	
 	Scan2:
 	
 	```
-	$ gcc -O3 -w Scan2.c -o Scan2 -include {newQuery.h}
+	$ gcc -O3 -w -lm Scan2.c -o Scan2 -include {newQuery.h}
 	$ ./Scan2 {dataPath}
 	```
 	To run AVXScan1 and AVXScan2, make sure that your computer supports AVX2 instructions.
@@ -72,69 +72,69 @@ Getting Started
 	AVXScan1:
 	
 	```
-	$ gcc -O3 -w -msse4.1 -mavx2 AVXScan1.c -o AVXScan1 -include {newQuery.h}
+	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan1.c -o AVXScan1 -include {newQuery.h}
 	$ ./AVXScan1 {dataPath}
 	```
 	
 	AVXScan2:
 	
 	```
-	$ gcc -O3 -w -msse4.1 -mavx2 AVXScan2.c -o AVXScan2 -include {newQuery.h}
+	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan2.c -o AVXScan2 -include {newQuery.h}
 	$ ./AVXScan2 {dataPath}
 	```
 	
 	Scan1_multithread_interquery:
 	
 	```
-	$ gcc -O3 -w Scan1_multithread_interquery.c -o Scan1_multithread_interquery -lpthread -include {newQuery.h}
+	$ gcc -O3 -w -lm Scan1_multithread_interquery.c -o Scan1_multithread_interquery -lpthread -include {newQuery.h}
 	$ ./Scan1_multithread_interquery {dataPath} {numThreads}
 	```
 	
 	Scan1_multithread_intraquery:
 	
 	```
-	$ gcc -O3 -w Scan1_multithread_intraquery.c -o Scan1_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes.h}
+	$ gcc -O3 -w -lm -lm Scan1_multithread_intraquery.c -o Scan1_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes.h}
 	$ ./Scan1_multithread_intraquery {dataPath} {numThreads}
 	```
 	
 	Scan2_multithread_interquery:
 	
 	```
-	$ gcc -O3 -w Scan2_multithread_interquery.c -o Scan2_multithread_interquery -lpthread -include {newQuery.h}
+	$ gcc -O3 -w -lm Scan2_multithread_interquery.c -o Scan2_multithread_interquery -lpthread -include {newQuery.h}
 	$ ./Scan2_multithread_interquery {dataPath} {numThreads}
 	```
 	
 	Scan2_multithread_intraquery:
 	
 	```
-	$ gcc -O3 -w Scan2_multithread_intraquery.c -o Scan2_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes.h}
+	$ gcc -O3 -w -lm Scan2_multithread_intraquery.c -o Scan2_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes.h}
 	$ ./Scan2_multithread_intraquery {dataPath} {numThreads}
 	```
 	
 	AVXScan1_multithread_interquery:
 	
 	```
-	$ gcc -O3 -w -msse4.1 -mavx2 AVXScan1_multithread_interquery.c -o AVXScan1_multithread_interquery -lpthread -include {newQuery.h}
+	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan1_multithread_interquery.c -o AVXScan1_multithread_interquery -lpthread -include {newQuery.h}
 	$ ./AVXScan1_multithread_interquery {dataPath} {numThreads}
 	```
 	
 	AVXScan1_multithread_intraquery:
 	
 	```
-	$ gcc -O3 -w -msse4.1 -mavx2 AVXScan1_multithread_intraquery.c -o AVXScan1_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes_padding.h}
+	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan1_multithread_intraquery.c -o AVXScan1_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes_padding.h}
 	$ ./AVXScan1_multithread_intraquery {dataPath} {numThreads}
 	```
 	
 	AVXScan2_multithread_interquery:
 	
 	```
-	$ gcc -O3 -w -msse4.1 -mavx2 AVXScan2_multithread_interquery.c -o AVXScan2_multithread_interquery -lpthread -include {newQuery.h}
+	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan2_multithread_interquery.c -o AVXScan2_multithread_interquery -lpthread -include {newQuery.h}
 	$ ./AVXScan2_multithread_interquery {dataPath} {numThreads}
 	```
 	
 	AVXScan2_multithread_intraquery:
 	
 	```
-	$ gcc -O3 -w -msse4.1 -mavx2 AVXScan2_multithread_intraquery.c -o AVXScan2_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes_padding.h}
+	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan2_multithread_intraquery.c -o AVXScan2_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes_padding.h}
 	$ ./AVXScan2_multithread_intraquery {dataPath} {numThreads}
 	```
