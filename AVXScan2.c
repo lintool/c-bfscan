@@ -9,7 +9,7 @@
 #include "include/data.c"
 #include "include/heap.c"
 
-extern void init_tf();
+extern void init_tf(char *data_path);
 int num_docs;
 int total_terms;
 int num_topics;
