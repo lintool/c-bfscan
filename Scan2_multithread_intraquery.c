@@ -17,10 +17,7 @@ struct arg_struct {
     heap* h;
 };
 
-extern void init_tf(char * data_path);
-int num_docs;
-int total_terms;
-int num_topics;
+extern void init_tf_intra(char * data_path, char *query_path, bool padding);
 int search(struct arg_struct *arg) {
   int n = arg->topic;
   int start = arg->startidx;
@@ -37,10 +34,10 @@ int search(struct arg_struct *arg) {
 
   if ( topics[n][1] == 1 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -70,10 +67,10 @@ int search(struct arg_struct *arg) {
     }
   } else if ( topics[n][1] == 2 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -105,10 +102,10 @@ int search(struct arg_struct *arg) {
 
   } else if ( topics[n][1] == 3 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -140,10 +137,10 @@ int search(struct arg_struct *arg) {
     }
   } else if ( topics[n][1] == 4 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -176,10 +173,10 @@ int search(struct arg_struct *arg) {
     }
   } else if ( topics[n][1] == 5 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -213,10 +210,10 @@ int search(struct arg_struct *arg) {
     }
   } else if ( topics[n][1] == 6 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -251,10 +248,10 @@ int search(struct arg_struct *arg) {
     }
   } else if ( topics[n][1] == 7 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -290,10 +287,10 @@ int search(struct arg_struct *arg) {
     }
   } else if ( topics[n][1] == 8 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -330,10 +327,10 @@ int search(struct arg_struct *arg) {
     }
   } else if ( topics[n][1] == 9 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -371,10 +368,10 @@ int search(struct arg_struct *arg) {
     }
   } else if ( topics[n][1] == 10 ) {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -413,10 +410,10 @@ int search(struct arg_struct *arg) {
     }
   } else {
     for (i=start; i<end; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered[i]; j++) {
         for (t=2; t<2+topics[n][1]; t++) {
@@ -453,15 +450,15 @@ int search(struct arg_struct *arg) {
 }
 
 int main(int argc, const char* argv[]) {
-  if (argc <= 2) {
-    printf("PLEASE ENTER DATA PATH AND THREAD NUMBER!\n");
+  if (argc <= 3) {
+    printf("PLEASE ENTER STATS PATH, QUERY PATH AND THREAD NUMBER!\n");
     return 0;
   }
-  int nthreads=atoi(argv[2]);
+  int nthreads=atoi(argv[3]);
   printf("Number of threads: %d\n", nthreads);
-  init_tf(argv[1]);
+  init_tf_intra(argv[1], argv[2], false);
   double total = 0;
-  int N = 3;
+  int N = 1;
   int count;
   for (count = 1; count <= N; count ++) {
     struct timeval begin, end;
@@ -478,11 +475,11 @@ int main(int argc, const char* argv[]) {
       for (i=0; i<nthreads; i++) {
         struct arg_struct *args = malloc(sizeof *args);
         args->topic = n;
-        args->startidx = i*(int)(ceil((double)num_docs / nthreads));
-        if ((i+1)*(int)(ceil((double)num_docs / nthreads)) > num_docs) {
+        args->startidx = (int)(ceil(num_docs * 1.0 / nthreads) * i);
+        if ((int)(ceil(num_docs * 1.0 / nthreads) * (i + 1)) > num_docs) {
           args->endidx = num_docs;
         } else {
-          args->endidx = (i+1)*(int)(ceil((double)num_docs / nthreads));
+          args->endidx = (int)(ceil(num_docs * 1.0 / nthreads) * (i + 1));
         }
         args->base = termindexes[nthreads-1][i];
         heap h;
@@ -516,7 +513,7 @@ int main(int argc, const char* argv[]) {
 
       int rank = TOP_K;
       while (heap_delmin(&h_merge, (void**)&min_key_merge, (void**)&min_val_merge)) {
-        printf("MB%02d Q0 %ld %d %f Scan2_multithread_intraquery\n", (n+1), tweetids[*min_val_merge], rank, *min_key_merge);
+        printf("%d %ld %d %f Scan2_multithread_intraquery\n", (n+1), tweetids[*min_val_merge], rank, *min_key_merge);
         rank--;
       }
       heap_destroy(&h_merge);

@@ -8,12 +8,9 @@
 #include "include/data.c"
 #include "include/heap.c"
 
-extern void init_tf(char * data_path);
-int num_docs;
-int total_terms;
-int num_topics;
+extern void init_tf(char * data_path, char *query_path);
 int main(int argc, const char* argv[]) {
-  init_tf(argv[1]);
+  init_tf(argv[1], argv[2]);
   
   int i=0, j=0;
   
@@ -37,10 +34,10 @@ int main(int argc, const char* argv[]) {
     base = 0;
     if ( topics[n][1] == 1 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -71,10 +68,10 @@ int main(int argc, const char* argv[]) {
 
     } else if ( topics[n][1] == 2 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -106,10 +103,10 @@ int main(int argc, const char* argv[]) {
 
     } else if ( topics[n][1] == 3 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -141,10 +138,10 @@ int main(int argc, const char* argv[]) {
       }
     } else if ( topics[n][1] == 4 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -177,10 +174,10 @@ int main(int argc, const char* argv[]) {
       }
     } else if ( topics[n][1] == 5 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -214,10 +211,10 @@ int main(int argc, const char* argv[]) {
       }
     } else if ( topics[n][1] == 6 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -252,10 +249,10 @@ int main(int argc, const char* argv[]) {
       }
     } else if ( topics[n][1] == 7 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -291,10 +288,10 @@ int main(int argc, const char* argv[]) {
       }
     }  else if ( topics[n][1] == 8 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -331,10 +328,10 @@ int main(int argc, const char* argv[]) {
       }
     } else if ( topics[n][1] == 9 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -372,10 +369,10 @@ int main(int argc, const char* argv[]) {
       }
     } else if ( topics[n][1] == 10 ) {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           if (collection_tf[base+j] == topics[n][2]) score+=log(1 + tf[base+j]/(MU * (cf[topics[n][2]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
@@ -414,10 +411,10 @@ int main(int argc, const char* argv[]) {
       }
     } else {
       for (i=0; i<num_docs; i++) {
-        if (tweetids[i] > topics_time[n]) {
-          base += doclengths_ordered[i];
-          continue;
-        }
+        // if (tweetids[i] > topics_time[n]) {
+        //   base += doclengths_ordered[i];
+        //   continue;
+        // }
         score = 0;
         for (j=0; j<doclengths_ordered[i]; j++) {
           for (t=2; t<2+topics[n][1]; t++) {
@@ -453,7 +450,7 @@ int main(int argc, const char* argv[]) {
 
     int rank = TOP_K;
     while (heap_delmin(&h, (void**)&min_key, (void**)&min_val)) {
-      printf("MB%02d Q0 %ld %d %f Scan2\n", (n+1), tweetids[*min_val], rank, *min_key);
+      printf("%d %ld %d %f Scan2\n", (n+1), tweetids[*min_val], rank, *min_key);
       rank--;
     }
 

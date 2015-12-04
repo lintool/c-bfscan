@@ -5,9 +5,11 @@
 #define MU 2500.0
 #define TOP_K 1000
 
-extern int num_docs;
-extern int total_terms;
-extern int num_topics;
+int num_docs;
+int total_terms;
+int num_topics;
+// extern termindexes;
+// extern termindexes_padding;
 
 uint32_t * collection_tf;
 uint8_t * tf;
@@ -21,3 +23,6 @@ uint32_t * cf;
 uint32_t * base;
 uint32_t * base_padding;
 uint8_t * doc_pos;
+int **topics;
+int **termindexes;
+// long topics_time[];

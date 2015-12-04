@@ -376,5 +376,3 @@ void heap_foreach(heap* h, void (*func)(void*,void*)) {
         func(entry->key, entry->value);
     }
 }
-
-

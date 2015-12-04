@@ -10,10 +10,7 @@
 #include "include/heap.c"
 #include "include/threadpool.c"
 
-extern void init_tf(char * data_path);
-int num_docs;
-int total_terms;
-int num_topics;
+extern void init_tf(char * data_path, char *query_path);
 int search(int n) {
   int i=0, j=0;
 
@@ -37,10 +34,10 @@ int search(int n) {
     __m256i query_vec_1 = _mm256_set1_epi32(topics[n][2]);
 
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -92,10 +89,10 @@ int search(int n) {
     __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
 
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -167,10 +164,10 @@ int search(int n) {
     __m256i query_vec_2 = _mm256_set1_epi32(topics[n][3]);
     __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -261,10 +258,10 @@ int search(int n) {
     __m256i query_vec_3 = _mm256_set1_epi32(topics[n][4]);
     __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -375,10 +372,10 @@ int search(int n) {
     __m256i query_vec_4 = _mm256_set1_epi32(topics[n][5]);
     __m256i query_vec_5 = _mm256_set1_epi32(topics[n][6]);
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         // __m256i * test = (__m256i *)&collection_tf_padding[base+j];
@@ -510,10 +507,10 @@ int search(int n) {
     __m256i query_vec_5 = _mm256_set1_epi32(topics[n][6]);
     __m256i query_vec_6 = _mm256_set1_epi32(topics[n][7]);
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -666,10 +663,10 @@ int search(int n) {
     __m256i query_vec_6 = _mm256_set1_epi32(topics[n][7]);
     __m256i query_vec_7 = _mm256_set1_epi32(topics[n][8]);
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -841,10 +838,10 @@ int search(int n) {
     __m256i query_vec_7 = _mm256_set1_epi32(topics[n][8]);
     __m256i query_vec_8 = _mm256_set1_epi32(topics[n][9]);
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -1035,10 +1032,10 @@ int search(int n) {
     __m256i query_vec_8 = _mm256_set1_epi32(topics[n][9]);
     __m256i query_vec_9 = _mm256_set1_epi32(topics[n][10]);
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -1249,10 +1246,10 @@ int search(int n) {
     __m256i query_vec_9 = _mm256_set1_epi32(topics[n][10]);
     __m256i query_vec_10 = _mm256_set1_epi32(topics[n][11]);
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j+=8) {
         collect_vec = _mm256_loadu_si256(&collection_tf_padding[base+j]);
@@ -1472,10 +1469,10 @@ int search(int n) {
     }
   } else {
     for (i=0; i<num_docs; i++) {
-      if (tweetids[i] > topics_time[n]) {
-        base += doclengths_ordered_padding[i];
-        continue;
-      }
+      // if (tweetids[i] > topics_time[n]) {
+      //   base += doclengths_ordered_padding[i];
+      //   continue;
+      // }
       score = 0;
       for (j=0; j<doclengths_ordered_padding[i]; j++) {
         for (t=2; t<2+topics[n][1]; t++) {
@@ -1511,7 +1508,7 @@ int search(int n) {
 
   int rank = TOP_K;
   while (heap_delmin(&h, (void**)&min_key, (void**)&min_val)) {
-    printf("MB%02d Q0 %ld %d %f AVXScan1_multithread_interquery\n", (n+1), tweetids[*min_val], rank, *min_key);
+    printf("%d %ld %d %f AVXScan1_multithread_interquery\n", (n+1), tweetids[*min_val], rank, *min_key);
     rank--;
   }
 
@@ -1520,15 +1517,15 @@ int search(int n) {
 }
 
 int main(int argc, const char* argv[]) {
-  if (argc <= 2) {
-    printf("PLEASE ENTER DATA PATH AND THREAD NUMBER!\n");
+  if (argc <= 3) {
+    printf("PLEASE ENTER STATS PATH, QUERY PATH AND THREAD NUMBER!\n");
     return 0;
   }
-  int nthreads=atoi(argv[2]);
+  int nthreads=atoi(argv[3]);
   printf("Number of threads: %d\n", nthreads);
-  init_tf(argv[1]);
+  init_tf(argv[1], argv[2]);
   double total = 0;
-  int N = 3;
+  int N = 1;
   int count;
   for (count = 1; count <= N; count ++) {
     struct timeval begin, end;
