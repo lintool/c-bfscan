@@ -19,6 +19,7 @@ package cc.twittertools.corpus.data;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.Arrays;
 
 import com.google.common.base.Preconditions;
 
