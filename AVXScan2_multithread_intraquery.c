@@ -14,7 +14,7 @@ struct arg_struct {
     int topic;
     int startidx;
     int endidx;
-    int base;
+    long base;
     heap* h;
 };
 
@@ -27,7 +27,7 @@ int search(struct arg_struct *arg) {
   heap_create(h,0,NULL);
 
   int i=0, j=0;
-  int base = arg->base;
+  long base = arg->base;
   float score;
   int len1, len2, len3, len4, len5, len6;
   int indexsum;

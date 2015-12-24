@@ -27,20 +27,20 @@ void init_tf(char *data_path, char *query_path) {
   size_t len = 0;
   ssize_t read;
 
-  int i=0;
-  int stats[4];
+  long i=0;
+  long stats[4];
   fp = concat_fopen(data_path, "/stats.txt", "r");
   if (fp == NULL) { printf("Error!\n"); exit(-1); }
   printf("-> Reading from stats.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
-     stats[i] = atoi(line);
+     stats[i] = atol(line);
      i ++;
   }
   fclose(fp);
   num_docs = stats[0];
-  int total_terms_unique_per_doc = stats[1];
+  long total_terms_unique_per_doc = stats[1];
   total_terms = stats[2];
-  int num_terms = stats[3];
+  long num_terms = stats[3];
 
   collection_tf = malloc(total_terms_unique_per_doc * sizeof(uint32_t));
   i=0;
@@ -49,9 +49,9 @@ void init_tf(char *data_path, char *query_path) {
   printf("-> Reading collection from all_terms_ordered.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
     collection_tf[i++] = atoi(line);
-    if (i % 10000000 == 0 ) printf("  %d terms...\n", i);
+    if (i % 10000000 == 0 ) printf("  %ld terms...\n", i);
   }
-  printf("Total of %d terms ordered read\n\n", i);
+  printf("Total of %ld terms ordered read\n\n", i);
   fclose(fp);
 
   tf = malloc(total_terms_unique_per_doc * sizeof(uint8_t));
@@ -61,9 +61,9 @@ void init_tf(char *data_path, char *query_path) {
   printf("-> Reading tf from all_terms_tf.txt\n");
   while ((read = getline(&line, &len, fp)) != -1) {
     tf[i++] = atoi(line);
-    if (i % 10000000 == 0 ) printf("  %d tfs...\n", i);
+    if (i % 10000000 == 0 ) printf("  %ld tfs...\n", i);
   }
-  printf("Total of %d tfs read\n\n", i);
+  printf("Total of %ld tfs read\n\n", i);
   fclose(fp);
 
   doclengths_ordered = malloc(num_docs * sizeof(uint8_t));
@@ -71,7 +71,7 @@ void init_tf(char *data_path, char *query_path) {
   base = malloc(num_docs * sizeof(uint32_t));
   base_padding = malloc(num_docs * sizeof(uint32_t));
   i=0;
-  int sum = 0;
+  long sum = 0;
   base[0] = 0;
   base_padding[0] = 0;
   fp = concat_fopen(data_path, "/doc_length_ordered.txt", "r");
@@ -95,10 +95,10 @@ void init_tf(char *data_path, char *query_path) {
   fclose(fp);
 
   collection_tf_padding = malloc(sum * sizeof(uint32_t));
-  tf_padding = malloc(sum * sizeof(uint32_t));
+  tf_padding = malloc(sum * sizeof(uint8_t));
   doc_pos = malloc(sum * sizeof(uint8_t));
-  int base = 0;
-  int i_padding = 0;
+  long base = 0;
+  long i_padding = 0;
   int ii=0;
   int jj=0;
   int pos=0;

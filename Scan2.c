@@ -18,7 +18,7 @@ int main(int argc, const char* argv[]) {
   double time_spent;
   begin = clock();
 
-  int base = 0;
+  long base = 0;
   float score;
 
   int n;

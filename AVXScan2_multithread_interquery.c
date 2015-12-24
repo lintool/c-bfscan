@@ -14,7 +14,7 @@ extern void init_tf(char * data_path, char *query_path);
 int search(int n) {
   int i=0, j=0;
 
-  int base = 0;
+  long base = 0;
   float score;
   int len1, len2, len3, len4, len5, len6;
   int indexsum;

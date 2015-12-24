@@ -5,8 +5,8 @@
 #define MU 2500.0
 #define TOP_K 1000
 
-int num_docs;
-int total_terms;
+long num_docs;
+long total_terms;
 int num_topics;
 // extern termindexes;
 // extern termindexes_padding;

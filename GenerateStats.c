@@ -48,14 +48,14 @@ int main(int argc, const char* argv[]) {
   size_t len_text = 0, len_docs = 0;
   char *ch_text = NULL, *ch_docs = NULL;
 
-  int doc_cnt = 0;
-  int term_cnt = 1;
+  long doc_cnt = 0;
+  long term_cnt = 1;
   int size = 30000;
   hashMap term2idmap;
   hashMapNew(&term2idmap);
   int *cf = (int *) malloc(size * sizeof(int));
-  int collection_unique_term_size = 0;
-  int collection_all_term_size = 0;
+  long collection_unique_term_size = 0;
+  long collection_all_term_size = 0;
   
   while ((read_text = getline(&line_text, &len_text, fp_inputtext)) != -1) {
     // delete
@@ -128,10 +128,10 @@ int main(int argc, const char* argv[]) {
   }
   free(cf);
 
-  fprintf(fp_stats, "%d\n", doc_cnt);
-  fprintf(fp_stats, "%d\n", collection_unique_term_size);
-  fprintf(fp_stats, "%d\n", collection_all_term_size);
-  fprintf(fp_stats, "%d\n", term_cnt - 1);
+  fprintf(fp_stats, "%ld\n", doc_cnt);
+  fprintf(fp_stats, "%ld\n", collection_unique_term_size);
+  fprintf(fp_stats, "%ld\n", collection_all_term_size);
+  fprintf(fp_stats, "%ld\n", term_cnt - 1);
 
   struct entry *entryTerm2Id;
   HASHMAP_FOR_EACH(hashMap, entryTerm2Id, term2idmap) {
@@ -151,10 +151,10 @@ int main(int argc, const char* argv[]) {
   fclose(fp_term2idmapping);
 
   printf("-> Start preprocessing for storing termindexes...\n");
-  int *termindexes;
-  int *termindexes_padding;
-  termindexes = malloc((doc_cnt + 1) * sizeof(int));
-  termindexes_padding = malloc((doc_cnt + 1) * sizeof(int));
+  long *termindexes;
+  long *termindexes_padding;
+  termindexes = malloc((doc_cnt + 1) * sizeof(long));
+  termindexes_padding = malloc((doc_cnt + 1) * sizeof(long));
   doc_cnt = 0;
   fp_length_ordered = concat_fopen(output_path, "/doc_length_ordered.txt", "r");
   while ((read_text = getline(&line_text, &len_text, fp_length_ordered)) != -1) {
@@ -169,8 +169,8 @@ int main(int argc, const char* argv[]) {
   printf("-> Start storing termindexes......\n");
   for (int thread = 1; thread <= 48; thread ++) {
     for (int part = 0; part < thread; part ++) {
-      fprintf(fp_termindexes, "%d ", termindexes[(int)(ceil(doc_cnt * 1.0 / thread) * part)]);
-      fprintf(fp_termindexes_padding, "%d ", termindexes_padding[(int)(ceil(doc_cnt * 1.0 / thread) * part)]);
+      fprintf(fp_termindexes, "%ld ", termindexes[(int)(ceil(doc_cnt * 1.0 / thread) * part)]);
+      fprintf(fp_termindexes_padding, "%ld ", termindexes_padding[(int)(ceil(doc_cnt * 1.0 / thread) * part)]);
     }
     fprintf(fp_termindexes, "\n");
     fprintf(fp_termindexes_padding, "\n");

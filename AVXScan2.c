@@ -18,7 +18,7 @@ int main(int argc, const char* argv[]) {
   double time_spent;
   begin = clock();
 
-  int base;
+  long base;
   int len1, len2, len3, len4, len5, len6;
   int indexsum;
   __m256i collect_vec, mask;
