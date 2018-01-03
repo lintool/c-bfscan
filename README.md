@@ -1,12 +1,12 @@
 System Design
 --------------
 There are four different strategies you can run: Scan1, Scan2, AVXScan1, AVXScan2 and each has a multithreading version.
-* Scan1(Scan1.c): use nested for loops
-* Scan2(Scan2.c): unroll the for loops that check the query terms
-* AVXScan1(AVXScan1.c): add SSE, AVX2 to Scan2
-* AVXScan2(AVXScan2.c): unroll for loop for looping docs based on AVXScan1
-
-The multithreading versions are just the files that have the term "multithread" in it and all the files are self-explanatory.
+* Scan1(Scan1_multithread_{inter/intra}query.c): use nested for loops
+* Scan2(Scan2_multithread_{inter/intra}query.c): unroll the for loops that check the query terms
+* AVXScan1(AVXScan1_multithread_{inter/intra}query.c): add SSE, AVX2 to Scan2
+* AVXScan2(AVXScan2_multithread_{inter/intra}query.c): unroll for loop for looping docs based on AVXScan1
+* AVXScan3(AVXScan3_multithread_{inter/intra}query.c): optimize AVXScan2's query evaluation with utilization of map
+* AVXScan4(AVXScan4_multithread_{inter/intra}query.c): prestore score based on AVXScan3
 
 Getting Started
 --------------
@@ -35,10 +35,17 @@ Getting Started
 	$ sh target/appassembler/bin/GenerateStatistics -collection {collectionPath} -index {indexPath} -output {dataPath}
 	```
 
-5. To format the efficiency topics (here we provide an efficiency file in /data/ folder) to TREC query format and get the top N topics:
+	If you would like to generate document pool using C, run the following:
+    
+    ```
+    $ gcc -w GenerateStats.c -o GenerateStats 
+    $ ./GenerateStats {collectionPath} {dataPath}
+    ```
+
+5. To format the efficiency topics (here we provide an efficiency file in /data/ folder) to TREC query format and get the top N topics, here lasttweetid indicates the last tweet id in the collection (Tweets2011: 35125724180516864, Tweets2013:318513034073100288) if you desire a bfs over the entire collection:
 
 	```
-	$ sh target/appassembler/bin/FormatQuery -input ../data/05.efficiency_topics -top {N} -output {queryPath}
+	$ sh target/appassembler/bin/FormatQuery -input ../data/05.efficiency_topics -top {N} -lasttweetid {lastTweetId} -output {queryPath}
 	```
 6. Convert TREC query to the query that can be fed to c-bfscan, note that outputFile is the new format of the query and needs to be a .h file:
 
@@ -53,35 +60,6 @@ Getting Started
 	```
 
 8. To run different systems:
-
-	Scan1:
-	
-	```
-	$ gcc -O3 -w -lm Scan1.c -o Scan1 -include {newQuery.h}
-	$ ./Scan1 {dataPath}
-	```
-	
-	Scan2:
-	
-	```
-	$ gcc -O3 -w -lm Scan2.c -o Scan2 -include {newQuery.h}
-	$ ./Scan2 {dataPath}
-	```
-	To run AVXScan1 and AVXScan2, make sure that your computer supports AVX2 instructions.
-	
-	AVXScan1:
-	
-	```
-	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan1.c -o AVXScan1 -include {newQuery.h}
-	$ ./AVXScan1 {dataPath}
-	```
-	
-	AVXScan2:
-	
-	```
-	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan2.c -o AVXScan2 -include {newQuery.h}
-	$ ./AVXScan2 {dataPath}
-	```
 	
 	Scan1_multithread_interquery:
 	
@@ -93,7 +71,7 @@ Getting Started
 	Scan1_multithread_intraquery:
 	
 	```
-	$ gcc -O3 -w -lm -lm Scan1_multithread_intraquery.c -o Scan1_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes.h}
+	$ gcc -O3 -w -lm Scan1_multithread_intraquery.c -o Scan1_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes.h}
 	$ ./Scan1_multithread_intraquery {dataPath} {numThreads}
 	```
 	
@@ -111,6 +89,8 @@ Getting Started
 	$ ./Scan2_multithread_intraquery {dataPath} {numThreads}
 	```
 	
+	To run AVX versions, make sure that your computer supports AVX2 instructions.
+
 	AVXScan1_multithread_interquery:
 	
 	```
@@ -137,4 +117,32 @@ Getting Started
 	```
 	$ gcc -O3 -w -lm -msse4.1 -mavx2 AVXScan2_multithread_intraquery.c -o AVXScan2_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes_padding.h}
 	$ ./AVXScan2_multithread_intraquery {dataPath} {numThreads}
+	```
+
+	AVXScan3_multithread_interquery:
+	
+	```
+	$ gcc -O3 -ffast-math -mfpmath=sse -funroll-loops -w -lm -msse4.1 -mavx2 AVXScan3_multithread_interquery.c -o AVXScan3_multithread_interquery -lpthread -include {newQuery.h}
+	$ ./AVXScan3_multithread_interquery {dataPath} {numThreads}
+	```
+	
+	AVXScan3_multithread_intraquery:
+	
+	```
+	$ gcc -O3 -ffast-math -mfpmath=sse -funroll-loops -w -lm -msse4.1 -mavx2 AVXScan3_multithread_intraquery.c -o AVXScan3_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes_padding.h}
+	$ ./AVXScan3_multithread_intraquery {dataPath} {numThreads}
+	```
+
+	AVXScan4_multithread_interquery:
+	
+	```
+	$ gcc -O3 -ffast-math -mfpmath=sse -funroll-loops -w -lm -msse4.1 -mavx2 AVXScan4_multithread_interquery.c -o AVXScan4_multithread_interquery -lpthread -include {newQuery.h}
+	$ ./AVXScan4_multithread_interquery {dataPath} {numThreads}
+	```
+	
+	AVXScan4_multithread_intraquery:
+	
+	```
+	$ gcc -O3 -ffast-math -mfpmath=sse -funroll-loops -w -lm -msse4.1 -mavx2 AVXScan4_multithread_intraquery.c -o AVXScan4_multithread_intraquery -lpthread -include {newQuery.h} -include {dataPath/termindexes_padding.h}
+	$ ./AVXScan4_multithread_intraquery {dataPath} {numThreads}
 	```

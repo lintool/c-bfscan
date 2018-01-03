@@ -13,55 +13,55 @@ struct arg_struct {
     int topic;
     int startidx;
     int endidx;
-    int base;
+    long base;
     heap* h;
 };
 
-extern void init_tf(char * data_path);
-int num_docs;
-int total_terms;
+extern void init_tf(char *data_path);
 int num_topics;
-int search(struct arg_struct *arg) {
-  int n = arg->topic;
-  int start = arg->startidx;
-  int end = arg->endidx;
-  heap* h = arg->h;
-  heap_create(h,0,NULL);
+int num_docs;
+long total_terms;
 
-  int i=0, j=0;
-  int base = arg->base;
-  float score;
-  int t;
+int search(struct arg_struct *arg) {
+  int n, i, j, t;
+  long base;
+
+  heap* h = arg->h;
+  heap_create(h, 0, NULL);
   float* min_key;
   int* min_val;
 
-  for (i=start; i<end; i++) {
+  float score;
+
+  n = arg->topic;
+  int start = arg->startidx;
+  int end = arg->endidx;
+  base = arg->base;
+  for (i = start; i < end; i ++) {
     if (tweetids[i] > topics_time[n]) {
       base += doclengths_ordered[i];
       continue;
     }
+
     score = 0;
-    for (j=0; j<doclengths_ordered[i]; j++) {
-      for (t=2; t<2+topics[n][1]; t++) {
-        if (collection_tf[base+j] == topics[n][t]) {
-            score += log(1 + tf[base+j]/(MU * (cf[topics[n][t]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
+    for (j = 0; j < doclengths_ordered[i]; j ++) {
+      for (t = 2; t < 2 + topics[n][1]; t ++) {
+        if (collection_tf[base + j] == topics[n][t]) {
+            score += log(1 + tf[base + j]/(MU * (cf[topics[n][t]] + 1) / (total_terms + 1))) + log(MU / (doclengths[i] + MU));
         }
       }
     }
 
     if (score > 0) {
       int size = heap_size(h);
-
-      if ( size < TOP_K ) {
+      if (size < TOP_K) {
         int *docid = malloc(sizeof(int)); *docid = i;
         float *scorez = malloc(sizeof(float)); *scorez = score;
         heap_insert(h, scorez, docid);
       } else {
         heap_min(h, (void**)&min_key, (void**)&min_val);
-
         if (score > *min_key) {
           heap_delmin(h, (void**)&min_key, (void**)&min_val);
-
           int *docid = malloc(sizeof(int)); *docid = i;
           float *scorez = malloc(sizeof(float)); *scorez = score;
           heap_insert(h, scorez, docid);
@@ -79,51 +79,55 @@ int main(int argc, const char* argv[]) {
     printf("PLEASE ENTER DATA PATH AND THREAD NUMBER!\n");
     return 0;
   }
-  int nthreads=atoi(argv[2]);
+
+  int nthreads = atoi(argv[2]);
   printf("Number of threads: %d\n", nthreads);
+
   init_tf(argv[1]);
   double total = 0;
-  int N = 3;
   int count;
-  for (count = 1; count <= N; count ++) {
-    struct timeval begin, end;
+  int N = 3;
+  int n, i;
+  for (count = 0; count < N; count ++) {
     double time_spent;
-    
-    gettimeofday(&begin, NULL);
-    int n;
-    for (n=0; n<num_topics; n++) {
+    for (n = 0; n < num_topics; n ++) {
       heap h_array[nthreads];
-      memset(h_array,0,sizeof(h_array));
+      memset(h_array, 0, sizeof(h_array));
       struct threadpool *pool;
       pool = threadpool_init(nthreads);
-      int i = 0;
-      for (i=0; i<nthreads; i++) {
-        struct arg_struct *args = malloc(sizeof *args);
-        args->topic = n;
-        args->startidx = i*(int)(ceil((double)num_docs / nthreads));
-        if ((i+1)*(int)(ceil((double)num_docs / nthreads)) > num_docs) {
-          args->endidx = num_docs;
+      struct arg_struct* args[nthreads];
+      for (i = 0; i < nthreads; i ++) {
+        args[i] = malloc(sizeof(struct arg_struct));
+        args[i]->topic = n;
+        args[i]->startidx = i * (int)(ceil((double)num_docs / nthreads));
+        if ((i + 1) * (int)(ceil((double)num_docs / nthreads)) > num_docs) {
+          args[i]->endidx = num_docs;
         } else {
-          args->endidx = (i+1)*(int)(ceil((double)num_docs / nthreads));
+          args[i]->endidx = (i + 1) * (int)(ceil((double)num_docs / nthreads));
         }
-        args->base = termindexes[nthreads-1][i];
+        args[i]->base = termindexes[nthreads - 1][i];
         heap h;
         h_array[i] = h;
-        args->h = &h_array[i];
-        threadpool_add_task(pool,search,args,0);
+        args[i]->h = &h_array[i];
       }
-      threadpool_free(pool,1);
+
+      struct timeval begin, end;
+      gettimeofday(&begin, NULL);
+      for (i = 0; i < nthreads; i ++) {
+        threadpool_add_task(pool, search, args[i], 0);
+      }
+      threadpool_free(pool, 1);
 
       heap h_merge;
-      heap_create(&h_merge,0,NULL);
+      heap_create(&h_merge, 0, NULL);
       float* min_key_merge;
       int* min_val_merge;
-      for (i=0; i<nthreads; i++) {
+      for (i = 0; i < nthreads; i ++) {
         float* min_key;
         int* min_val;
-        while(heap_delmin(&h_array[i], (void**)&min_key, (void**)&min_val)) {
+        while (heap_delmin(&h_array[i], (void**)&min_key, (void**)&min_val)) {
           int size = heap_size(&h_merge);
-          if ( size < TOP_K ) {
+          if (size < TOP_K) {
             heap_insert(&h_merge, min_key, min_val);
           } else {
             heap_min(&h_merge, (void**)&min_key_merge, (void**)&min_val_merge);
@@ -138,16 +142,17 @@ int main(int argc, const char* argv[]) {
 
       int rank = TOP_K;
       while (heap_delmin(&h_merge, (void**)&min_key_merge, (void**)&min_val_merge)) {
-        printf("MB%02d Q0 %ld %d %f Scan1_multithread_intraquery\n", (n+1), tweetids[*min_val_merge], rank, *min_key_merge);
-        rank--;
+        // printf("MB%02d Q0 %ld %d %f Scan1_multithread_intraquery\n", (n + 1), tweetids[*min_val_merge], rank, *min_key_merge);
+        rank --;
       }
       heap_destroy(&h_merge);
+
+      gettimeofday(&end, NULL);
+      time_spent = (double)((end.tv_sec * 1000000 + end.tv_usec) - (begin.tv_sec * 1000000 + begin.tv_usec));
+      total = total + time_spent / 1000.0;
     }
-    
-    gettimeofday(&end, NULL);
-    time_spent = (double)((end.tv_sec * 1000000 + end.tv_usec) - (begin.tv_sec * 1000000 + begin.tv_usec));
-    total = total + time_spent / 1000.0;
+    printf("Time = %f ms\n", total / num_topics);
   }
-  printf("Total time = %f ms\n", total/N);
-  printf("Time per query = %f ms\n", (total/N)/num_topics);
+  // printf("Total time = %f ms\n", total / N);
+  printf("Time per query = %f ms\n", (total / N) / num_topics);
 }
